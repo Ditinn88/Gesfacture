@@ -1209,7 +1209,7 @@ function CreateInvoiceContent() {
                   Total TTC Net :
                 </span>
                 <span className="font-mono font-extrabold text-base sm:text-lg text-neutral-900 dark:text-white">
-                  {formatFCFA(createdInvoice.amount)}
+                  {formatFCFA(createdInvoice.amount, createdInvoice.currency)}
                 </span>
               </div>
             </div>
