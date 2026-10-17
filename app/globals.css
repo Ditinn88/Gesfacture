@@ -1,0 +1,187 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Pure Neutral Notion Flat Design Tokens (100% Zero Blue Tint) */
+    --background: 0 0% 98.4%; /* #FAFAF9 pure Notion canvas */
+    --foreground: 0 0% 11%;   /* #1C1C1C pure deep charcoal */
+    --card: 0 0% 100%;        /* #FFFFFF */
+    --card-foreground: 0 0% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 11%;
+    --primary: 0 0% 11%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 15%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 46%;
+    --accent: 0 0% 95%;
+    --accent-foreground: 0 0% 11%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;     /* #E5E5E5 pure neutral gray, ZERO blue tint */
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 20%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 0 0% 9%;     /* #171717 pure dark neutral */
+    --foreground: 0 0% 96%;
+    --card: 0 0% 12%;          /* #1F1F1F */
+    --card-foreground: 0 0% 96%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 11%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 96%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 0 0% 15%;
+    --accent-foreground: 0 0% 96%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 18%;        /* #2E2E2E pure neutral dark border */
+    --input: 0 0% 18%;
+    --ring: 0 0% 40%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: #e5e5e5;
+  }
+  .dark * {
+    border-color: #262626;
+  }
+  *:focus-visible {
+    outline: none;
+  }
+  body {
+    background-color: #fafaf9;
+    color: #171717;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+  }
+  .dark body {
+    background-color: #121212;
+    color: #f5f5f5;
+  }
+}
+
+/* Notion Micro-Interactions & Search Loupe Animations */
+@keyframes loupeBounce {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  30% {
+    transform: scale(1.25) rotate(-18deg);
+  }
+  60% {
+    transform: scale(1.15) rotate(8deg);
+  }
+  100% {
+    transform: scale(1.2) rotate(-10deg);
+  }
+}
+
+.animate-loupe {
+  animation: loupeBounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Custom sleek scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(160, 160, 160, 0.3);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(160, 160, 160, 0.5);
+}
+
+/* Hide scrollbars for pill navigation and horizontal tabs */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* ==========================================================================
+   PRINT MEDIA STYLES - Clean Official A4 Invoice Printing
+   ========================================================================== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #171717 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide application shell, sidebar, topbar, buttons, modals & backdrops */
+  header,
+  aside,
+  nav,
+  .no-print,
+  [role="dialog"],
+  [aria-modal="true"],
+  .fixed,
+  .backdrop-blur-xs,
+  .backdrop-blur-md,
+  .backdrop-blur-sm {
+    display: none !important;
+  }
+
+  /* Isolate printable invoice on physical print / PDF */
+  body {
+    visibility: hidden !important;
+  }
+
+  #printable-invoice,
+  #printable-invoice * {
+    visibility: visible !important;
+  }
+
+  #printable-invoice {
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #171717 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  #printable-invoice table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  #printable-invoice tr {
+    page-break-inside: avoid !important;
+  }
+}
