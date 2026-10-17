@@ -34,7 +34,7 @@ import { CustomDatePicker } from "@/components/ui/custom-date-picker";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { printInvoice, downloadInvoicePdf, downloadInvoiceDocument } from "@/lib/print-invoice";
 
-export default function CreateInvoicePage() {
+function CreateInvoiceContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit");
@@ -1406,5 +1406,24 @@ export default function CreateInvoicePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CreateInvoicePage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="min-h-[400px] flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 flex items-center justify-center font-bold text-sm animate-pulse">
+              G
+            </div>
+            <p className="text-xs text-neutral-400">Chargement de la page de facturation...</p>
+          </div>
+        </div>
+      }
+    >
+      <CreateInvoiceContent />
+    </React.Suspense>
   );
 }
