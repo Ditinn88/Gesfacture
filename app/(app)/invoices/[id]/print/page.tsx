@@ -172,7 +172,7 @@ export default function InvoicePrintPage({
                 <th className="py-2.5 px-4">Description</th>
                 <th className="py-2.5 px-3 text-center">Qté</th>
                 <th className="py-2.5 px-3 text-right">Prix Unitaire HT</th>
-                <th className="py-2.5 px-4 text-right">Total HT (FCFA)</th>
+                <th className="py-2.5 px-4 text-right">Total HT ({invoice?.currency || "FCFA"})</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-200">
@@ -185,10 +185,10 @@ export default function InvoicePrintPage({
                     {item.quantity}
                   </td>
                   <td className="py-3 px-3 text-right text-neutral-600 font-mono">
-                    {formatFCFA(item.unitPrice)}
+                    {formatFCFA(item.unitPrice, invoice?.currency)}
                   </td>
                   <td className="py-3 px-4 text-right font-bold text-neutral-900 font-mono">
-                    {formatFCFA(item.total)}
+                    {formatFCFA(item.total, invoice?.currency)}
                   </td>
                 </tr>
               ))}
@@ -201,16 +201,16 @@ export default function InvoicePrintPage({
           <div className="w-72 p-4 rounded-xl bg-neutral-50 border border-neutral-200 space-y-2 text-xs">
             <div className="flex justify-between text-neutral-600">
               <span>Sous-total Brut HT :</span>
-              <span className="font-mono font-medium">{formatFCFA(subtotal)}</span>
+              <span className="font-mono font-medium">{formatFCFA(subtotal, invoice?.currency)}</span>
             </div>
             <div className="flex justify-between text-neutral-600">
               <span>TVA ({taxRate}%) :</span>
-              <span className="font-mono font-medium">{formatFCFA(taxAmount)}</span>
+              <span className="font-mono font-medium">{formatFCFA(taxAmount, invoice?.currency)}</span>
             </div>
             <div className="pt-2 border-t border-neutral-300 flex justify-between items-baseline font-bold text-neutral-900">
               <span className="text-xs uppercase tracking-wide">Total TTC Net :</span>
               <span className="font-extrabold font-mono text-base text-neutral-900">
-                {formatFCFA(totalAmount)}
+                {formatFCFA(totalAmount, invoice?.currency)}
               </span>
             </div>
           </div>

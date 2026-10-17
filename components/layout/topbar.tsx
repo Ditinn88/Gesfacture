@@ -222,7 +222,7 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
                             </div>
                             <div className="text-right shrink-0 flex items-center gap-2">
                               <span className="text-xs font-bold font-mono text-neutral-900 dark:text-white">
-                                {formatFCFA(inv.amount)}
+                                {formatFCFA(inv.amount, inv.currency)}
                               </span>
                               <StatusBadge status={inv.status} />
                             </div>

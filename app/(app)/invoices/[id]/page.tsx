@@ -139,6 +139,9 @@ export default function InvoiceDetailPage({
                 {invoice.number}
               </h1>
               <StatusBadge status={invoice.status as InvoiceStatusType} />
+              <span className="px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700">
+                {invoice.currency || "FCFA"}
+              </span>
             </div>
             <p className="text-xs text-neutral-400 mt-0.5">
               Émise le {formatDate(invoice.issueDate)} · Échéance au {formatDate(invoice.dueDate)}
@@ -372,7 +375,7 @@ export default function InvoiceDetailPage({
                 <th className="py-3 px-4">Description</th>
                 <th className="py-3 px-3 text-center">Qté</th>
                 <th className="py-3 px-3 text-right">Prix Unitaire HT</th>
-                <th className="py-3 px-4 text-right">Total HT (FCFA)</th>
+                <th className="py-3 px-4 text-right">Total HT ({invoice.currency || "FCFA"})</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
@@ -385,10 +388,10 @@ export default function InvoiceDetailPage({
                     {item.quantity}
                   </td>
                   <td className="py-3.5 px-3 text-right text-neutral-500 font-mono">
-                    {formatFCFA(item.unitPrice)}
+                    {formatFCFA(item.unitPrice, invoice.currency)}
                   </td>
                   <td className="py-3.5 px-4 text-right font-bold text-neutral-900 dark:text-white font-mono">
-                    {formatFCFA(item.total)}
+                    {formatFCFA(item.total, invoice.currency)}
                   </td>
                 </tr>
               ))}
@@ -401,21 +404,21 @@ export default function InvoiceDetailPage({
           <div className="w-full sm:w-80 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/60 dark:border-neutral-700/60 space-y-2 text-xs">
             <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
               <span>Sous-total Brut HT :</span>
-              <span className="font-mono font-medium">{formatFCFA(subtotal)}</span>
+              <span className="font-mono font-medium">{formatFCFA(subtotal, invoice.currency)}</span>
             </div>
             <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
               <span>TVA ({invoice.taxRate ?? 18}%) :</span>
-              <span className="font-mono font-medium">{formatFCFA(taxAmount)}</span>
+              <span className="font-mono font-medium">{formatFCFA(taxAmount, invoice.currency)}</span>
             </div>
             <div className="pt-2.5 border-t border-neutral-200 dark:border-neutral-700 flex justify-between items-baseline font-bold text-neutral-900 dark:text-white">
               <span className="text-xs uppercase tracking-wide">Total TTC Net :</span>
               <span className="font-extrabold font-mono text-base sm:text-lg text-neutral-900 dark:text-white">
-                {formatFCFA(invoice.amount)}
+                {formatFCFA(invoice.amount, invoice.currency)}
               </span>
             </div>
             <div className="flex justify-between text-[11px] text-neutral-400 pt-0.5">
               <span>Montant Déjà Réglé :</span>
-              <span className="font-mono">{formatFCFA(invoice.paidAmount)}</span>
+              <span className="font-mono">{formatFCFA(invoice.paidAmount, invoice.currency)}</span>
             </div>
           </div>
         </div>

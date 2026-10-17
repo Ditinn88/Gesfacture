@@ -24,7 +24,7 @@ import {
   ChevronDown,
   QrCode,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, AVAILABLE_CURRENCIES } from "@/lib/utils";
 import { useData } from "@/lib/data-context";
 import { useAuth } from "@/lib/auth-context";
 
@@ -679,12 +679,8 @@ export default function SettingsPage() {
                     <label className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200 mb-1.5">
                       Devise Principale du Compte
                     </label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { code: "XOF", label: "Franc CFA (XOF)" },
-                        { code: "EUR", label: "Euro (€)" },
-                        { code: "USD", label: "Dollar ($)" },
-                      ].map((curr) => (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {AVAILABLE_CURRENCIES.map((curr) => (
                         <button
                           key={curr.code}
                           type="button"
@@ -692,11 +688,12 @@ export default function SettingsPage() {
                           className={cn(
                             "px-2.5 py-2 rounded-xl text-xs font-semibold border text-center transition-all",
                             currency === curr.code
-                              ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 border-neutral-900 dark:border-white"
+                              ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 border-neutral-900 dark:border-white shadow-xs"
                               : "bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700 hover:border-neutral-400"
                           )}
                         >
-                          {curr.code}
+                          <span className="block font-bold">{curr.symbol}</span>
+                          <span className="text-[10px] opacity-75">{curr.code}</span>
                         </button>
                       ))}
                     </div>

@@ -20,8 +20,9 @@ export interface Invoice {
   };
   issueDate: string; // YYYY-MM-DD
   dueDate: string;   // YYYY-MM-DD
-  amount: number;    // Total TTC in FCFA
-  subtotal?: number; // Total HT in FCFA
+  currency?: string; // Currency code (e.g. XOF, EUR, USD, GNF, etc.)
+  amount: number;    // Total TTC
+  subtotal?: number; // Total HT
   taxRate?: number;  // 18% standard
   taxAmount?: number;
   paidAmount: number;

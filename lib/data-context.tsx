@@ -223,6 +223,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                   client: typeof row.client === "string" ? JSON.parse(row.client) : row.client,
                   issueDate: row.issue_date,
                   dueDate: row.due_date,
+                  currency: row.currency || "XOF",
                   amount: Number(row.amount),
                   subtotal: Number(row.subtotal || 0),
                   taxRate: Number(row.tax_rate || 18),
@@ -428,6 +429,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const id = invoiceData.id || `inv-${Date.now()}`;
     const newInvoice: Invoice = {
       ...invoiceData,
+      currency: invoiceData.currency || organization.currency || "XOF",
       id,
     };
     const updated = [newInvoice, ...invoices];
@@ -468,6 +470,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           id: newInvoice.id,
           number: newInvoice.number,
           client: newInvoice.client,
+          currency: newInvoice.currency || "XOF",
           issue_date: newInvoice.issueDate,
           due_date: newInvoice.dueDate,
           amount: newInvoice.amount,
@@ -498,6 +501,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       };
       if (updates.number) mapped.number = updates.number;
       if (updates.client) mapped.client = updates.client;
+      if (updates.currency) mapped.currency = updates.currency;
       if (updates.issueDate) mapped.issue_date = updates.issueDate;
       if (updates.dueDate) mapped.due_date = updates.dueDate;
       if (updates.amount !== undefined) mapped.amount = updates.amount;

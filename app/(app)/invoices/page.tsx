@@ -427,9 +427,9 @@ export default function InvoicesListPage() {
                         <StatusBadge status={inv.status as InvoiceStatusType} size="sm" />
                       </td>
 
-                      {/* Amount FCFA */}
+                      {/* Amount */}
                       <td className="py-3.5 px-3 text-right whitespace-nowrap font-bold text-neutral-900 dark:text-white font-mono text-xs">
-                        {formatFCFA(inv.amount)}
+                        {formatFCFA(inv.amount, inv.currency)}
                       </td>
 
                       {/* Crash-Proof Three Dots Menu Options Dropdown */}
