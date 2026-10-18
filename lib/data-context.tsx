@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { Invoice, Client, Organization, DEFAULT_ORGANIZATION } from "@/lib/mock-data";
+import { Invoice, Client, Organization, DEFAULT_ORGANIZATION, RECENT_INVOICES, TOP_CLIENTS } from "@/lib/mock-data";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 interface DataContextType {
@@ -27,9 +27,9 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-const INVOICES_STORAGE_KEY = "gesfacture_invoices_v7";
-const CLIENTS_STORAGE_KEY = "gesfacture_clients_v7";
-const ORGANIZATION_STORAGE_KEY = "gesfacture_organization_v7";
+const INVOICES_STORAGE_KEY = "gesfacture_invoices_v8";
+const CLIENTS_STORAGE_KEY = "gesfacture_clients_v8";
+const ORGANIZATION_STORAGE_KEY = "gesfacture_organization_v8";
 
 // Helper to detect and reject legacy mock / fixture data only
 const isMockInvoice = (inv: any): boolean => {
@@ -183,18 +183,34 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
         if (storedInvoices) {
           const parsed = JSON.parse(storedInvoices);
-          if (Array.isArray(parsed)) {
+          if (Array.isArray(parsed) && parsed.length > 0) {
             const clean = parsed.filter((i) => !isMockInvoice(i));
-            setInvoices(clean);
+            setInvoices(clean.length > 0 ? clean : RECENT_INVOICES);
+          } else {
+            setInvoices(RECENT_INVOICES);
           }
+        } else {
+          setInvoices(RECENT_INVOICES);
+          try {
+            localStorage.setItem(INVOICES_STORAGE_KEY, JSON.stringify(RECENT_INVOICES));
+          } catch (e) {}
         }
+
         if (storedClients) {
           const parsed = JSON.parse(storedClients);
-          if (Array.isArray(parsed)) {
+          if (Array.isArray(parsed) && parsed.length > 0) {
             const clean = parsed.filter((c) => !isMockClient(c));
-            setClients(clean);
+            setClients(clean.length > 0 ? clean : TOP_CLIENTS);
+          } else {
+            setClients(TOP_CLIENTS);
           }
+        } else {
+          setClients(TOP_CLIENTS);
+          try {
+            localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(TOP_CLIENTS));
+          } catch (e) {}
         }
+
         if (storedOrg) {
           const parsed = JSON.parse(storedOrg);
           if (parsed && typeof parsed === "object") {
