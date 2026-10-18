@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html class="scroll-smooth" lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>GesFacture — Facturez comme un pro. Encaissez en un éclair.</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  
+  <!-- Google Fonts: Plus Jakarta Sans & Space Grotesk -->
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet"/>
+  
+  <!-- Tailwind Configuration -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"Space Grotesk"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              navy: '#0b041c',
+              deep: '#110829',
+              primary: '#240a54',
+              accent: '#4f46e5',
+              soft: '#f5f3ff',
+              emerald: '#059669',
+              slate: '#64748b',
+              surface: '#fbfbfe',
+              card: '#ffffff'
+            }
+          },
+          boxShadow: {
+            'soft-card': '0 20px 40px -15px rgba(24, 7, 56, 0.07), 0 0 1px 1px rgba(24, 7, 56, 0.05)',
+            'float-pill': '0 20px 45px -10px rgba(17, 8, 41, 0.12), 0 2px 6px -1px rgba(17, 8, 41, 0.04)',
+            'btn-glow': '0 12px 28px -6px rgba(17, 8, 41, 0.35)',
+            'pro-highlight': '0 20px 50px -10px rgba(79, 70, 229, 0.25)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- External Separated CSS (Zero inline style tag) -->
+  <link rel="stylesheet" href="landing.css"/>
+</head>
+<body class="bg-brand-surface text-brand-navy antialiased font-sans selection:bg-brand-deep selection:text-white relative overflow-x-hidden min-h-screen">
+
+  <!-- Decorative Hero Background Elements -->
+  <div aria-hidden="true" class="fixed inset-0 pointer-events-none bg-grid-pattern z-0 opacity-70"></div>
+  <div aria-hidden="true" class="fixed -top-32 left-1/2 -translate-x-1/2 w-[800px] h-[450px] bg-gradient-to-tr from-purple-100/40 via-indigo-50/30 to-transparent blur-3xl pointer-events-none z-0"></div>
+
+  <!-- Header: Floating Navigation Pill (Responsive Mobile First) -->
+  <header class="fixed top-4 sm:top-6 inset-x-0 z-50 flex justify-center px-3 sm:px-4 pointer-events-none" data-purpose="floating-navigation">
+    <nav class="w-full max-w-4xl bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-float-pill rounded-full py-2 px-3 sm:px-6 flex items-center justify-between pointer-events-auto transition-all duration-300 floating-navbar">
+      <!-- Left Logo & Desktop Navigation Links -->
+      <div class="flex items-center gap-5 sm:gap-7">
+        <a aria-label="GesFacture Accueil" class="flex items-center gap-2 group mr-1 focus:outline-none" href="#">
+          <div class="w-8 h-8 rounded-full bg-[#110829] flex items-center justify-center text-white shadow-sm transition-transform duration-300 group-hover:scale-105">
+            <svg class="w-4 h-4 fill-current text-white" viewBox="0 0 24 24">
+              <path d="M7 2v20l3-2 3 2 3-2 3 2V2l-3 2-3-2-3 2-3-2zm9 13H8v-2h8v2zm0-4H8V9h8v2z"></path>
+            </svg>
+          </div>
+          <span class="font-bold text-base sm:text-lg tracking-tight text-[#110829]">Ges<span class="text-indigo-600">Facture</span></span>
+        </a>
+        <div class="hidden md:flex items-center gap-6 text-[13px] font-semibold text-slate-700">
+          <a class="hover:text-brand-deep transition-colors" href="#interactive-invoice">Outils gratuits</a>
+          <a class="hover:text-brand-deep transition-colors" href="#fonctionnalites">Produits</a>
+          <a class="hover:text-brand-deep transition-colors" href="#comment-ca-marche">Blog</a>
+          <a class="hover:text-brand-deep transition-colors" href="#tarifs">Ressources</a>
+        </div>
+      </div>
+
+      <!-- Right Actions & Mobile Hamburger -->
+      <div class="flex items-center gap-2 sm:gap-4">
+        <a class="text-xs sm:text-[13px] font-semibold text-slate-700 hover:text-brand-deep px-2 py-1.5 transition-colors" href="/login">
+          Connexion
+        </a>
+        <a class="inline-flex items-center justify-center text-xs sm:text-[13px] font-medium text-white bg-[#110829] hover:bg-[#1f1042] px-4 sm:px-6 py-2 sm:py-2.5 rounded-full shadow-md transition-all duration-200 hover:scale-[1.02] active:scale-95 whitespace-nowrap" href="#interactive-invoice">
+          Générer une facture
+        </a>
+        <button id="mobile-toggle-btn" type="button" class="md:hidden w-8 h-8 flex items-center justify-center text-slate-700 hover:text-brand-deep rounded-full hover:bg-slate-100 transition-colors" aria-label="Menu de navigation">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Mobile Drawer -->
+    <div id="mobile-drawer" class="hidden md:hidden fixed top-20 inset-x-4 bg-white/95 backdrop-blur-xl border border-slate-200/90 shadow-2xl rounded-3xl p-5 pointer-events-auto z-50">
+      <div class="flex flex-col gap-3 font-semibold text-sm text-slate-800">
+        <a class="px-3 py-2.5 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-colors" href="#interactive-invoice">Outils gratuits</a>
+        <a class="px-3 py-2.5 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-colors" href="#fonctionnalites">Produits</a>
+        <a class="px-3 py-2.5 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-colors" href="#comment-ca-marche">Blog</a>
+        <a class="px-3 py-2.5 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-colors" href="#tarifs">Ressources</a>
+        <div class="border-t border-slate-100 pt-3 mt-1 flex flex-col gap-2">
+          <a class="w-full text-center py-2.5 px-4 rounded-xl font-semibold text-sm border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors" href="/login">Connexion à mon compte</a>
+          <a class="w-full text-center py-2.5 px-4 rounded-xl font-bold text-sm bg-[#110829] text-white shadow-md hover:bg-[#1f1042] transition-colors" href="#interactive-invoice">Créer une facture maintenant</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <main class="relative z-10">
+    <section class="relative pt-32 pb-14 md:pt-44 md:pb-20 overflow-hidden" data-purpose="hero-section">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 relative z-10 text-center">
+        
+        <!-- 1. Floating Vintage Bulldog Binder Clip (Top Left) -->
+        <div aria-hidden="true" class="hidden lg:block absolute -left-4 xl:-left-8 top-14 -rotate-12 pointer-events-none z-20 animate-float-slow select-none">
+          <div class="relative w-28 h-28 drop-shadow-2xl">
+            <img alt="Orange Binder Clip" class="w-full h-full object-contain mix-blend-multiply drop-shadow-lg" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAg41_h9C5QF5wKB107f3eNjEeAGmW7N0xiL05059OTpAHfawWt3zsK16jTZyyUT2rKRXChsKartDChYJWuqOiYLXTTxCwy-jyVlIvkrPgYeO2V3fywJ_b71uXj3Ck_OluiQ4s-8jJPtRWpp01MlZf48r_cMvZQkdN7FLiH8e-IWd_-Plgc8OcAf69oZyK97s_Q3f64Xppvfguyd_SlXqHs1qf91_S4yb3rMaids_a8vKm-DnfD2eIItw" loading="lazy"/>
+          </div>
+        </div>
+
+        <!-- 2. Floating 3D Token / Badge (Top Right) -->
+        <div aria-hidden="true" class="hidden lg:block absolute right-8 xl:right-12 top-8 pointer-events-none z-20 animate-float-obj select-none">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-700 via-indigo-500 to-sky-400 p-[2px] shadow-2xl shadow-indigo-500/30 rotate-12 transition-transform">
+            <div class="w-full h-full bg-[#1e144a]/90 backdrop-blur rounded-2xl flex items-center justify-center text-white">
+              <svg class="w-7 h-7 text-sky-300 drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Floating Paperclip (Middle Right) -->
+        <div aria-hidden="true" class="hidden lg:block absolute right-14 xl:right-20 top-60 rotate-[28deg] pointer-events-none z-20 animate-float-reverse select-none">
+          <div class="w-16 h-28 drop-shadow-xl rotate-12">
+            <img alt="Metallic Paperclip" class="w-full h-full object-contain mix-blend-multiply drop-shadow-md" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkbtWVRzHVa4an8vRRfCfaXNO3foD11mhyogwXV7cBv7ip8_GTgH_ksK0gSQU4ZDKRXgTfyb3OaArCJuvRvGDDZxIjZltr25ZvXqOf0F4uJBBU6ps8rV3EfWU9QK0EpqlaQRxIha3O2GizsGb0r3Jqo0TRTUi5p6FKefjVTkxmP38Xhuk_QPFTRwBaoDhHplNHyzctpCJn08VcSR1i_8wbGnZmDLXSrGbypMiEwCxyjnVFdGK0gkUcoA" loading="lazy"/>
+          </div>
+        </div>
+
+        <!-- 4. Floating 10 000 FCFA Banknotes (Right edge) -->
+        <div aria-hidden="true" class="hidden md:block absolute -right-10 xl:right-0 top-60 rotate-[-8deg] pointer-events-none z-10 opacity-95 select-none">
+          <div class="relative w-56 sm:w-64 drop-shadow-[0_25px_35px_rgba(0,0,0,0.22)]">
+            <img alt="CFA Franc Banknotes Stack" class="w-full h-auto object-contain mix-blend-multiply rounded-lg" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB38YApruQj3-zQWMK-gNm_62gPBAIXlFr00KoFlb-QpRB8aMxRum-hJ2d2F845du9iYE3V9hllbhhKPd8Kglrc8EbwSvY74Ie5UZO00jOY_bAxfT2Z8NPRA7IpTd1J8Pl8uOIkPvieTUaeAp3sLgPbXSlX-Bd4vxKiMsbIJwPjCiA-6b5Ygkg3TeM-Ox3prF_mNvAmqZF71ITTKK000PZ7LpmEiKdNchy_JHvo818RNLsUn4nO4dKV5A" loading="lazy"/>
+            <div class="absolute -top-3 right-6 w-12 h-16 pointer-events-none rotate-12 drop-shadow-md">
+              <img alt="Paperclip" class="w-full h-full object-contain mix-blend-multiply" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkbtWVRzHVa4an8vRRfCfaXNO3foD11mhyogwXV7cBv7ip8_GTgH_ksK0gSQU4ZDKRXgTfyb3OaArCJuvRvGDDZxIjZltr25ZvXqOf0F4uJBBU6ps8rV3EfWU9QK0EpqlaQRxIha3O2GizsGb0r3Jqo0TRTUi5p6FKefjVTkxmP38Xhuk_QPFTRwBaoDhHplNHyzctpCJn08VcSR1i_8wbGnZmDLXSrGbypMiEwCxyjnVFdGK0gkUcoA" loading="lazy"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Floating Invoice Status Card (Bottom Left) -->
+        <div aria-hidden="true" class="hidden md:block absolute -left-10 bottom-2 rotate-[14deg] pointer-events-none z-10 select-none opacity-90">
+          <div class="w-44 sm:w-52 h-28 bg-white rounded-xl border border-slate-200/90 p-3 shadow-2xl flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Facture #840</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-slate-400 block">Total réglé</span>
+              <span class="font-mono font-extrabold text-sm text-slate-900">450 000 FCFA</span>
+            </div>
+            <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+              <div class="bg-emerald-500 h-full w-full"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. Floating CFA Coin Token -->
+        <div aria-hidden="true" class="hidden lg:flex flex-col items-center absolute left-20 bottom-12 pointer-events-none z-20 select-none animate-float-obj">
+          <div class="w-11 h-11 rounded-full bg-gradient-to-tr from-amber-500 via-yellow-400 to-amber-200 p-[2px] shadow-xl rotate-[-12deg]">
+            <div class="w-full h-full rounded-full bg-amber-50 border border-amber-300 flex items-center justify-center font-black text-amber-700 text-xs shadow-inner">
+              CFA
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. Floating Live Payment Notification Bubble -->
+        <div class="inline-flex items-center justify-center mb-6 sm:mb-8 relative z-30" data-purpose="notification-message-capsule">
+          <div class="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-lg px-4 py-2.5 flex items-center gap-3 animate-float-slow hover:shadow-xl transition-all">
+            <div class="relative">
+              <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-bold text-xs flex items-center justify-center shadow-sm">
+                AD
+              </div>
+              <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></span>
+            </div>
+            <div class="text-left">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-slate-900 leading-tight">Aïcha Diallo</span>
+                <span class="text-[10px] text-slate-400">À l'instant</span>
+              </div>
+              <p class="text-xs text-slate-600 leading-tight mt-0.5">
+                « C'était la facture la plus facile et rapide que j'ai jamais payée ! »
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bold Dramatic Centered H1 -->
+        <h1 class="hero-heading font-extrabold text-4xl sm:text-6xl md:text-7xl lg:text-[84px] text-[#110829] tracking-tight max-w-4xl mx-auto mb-5 sm:mb-6">
+          Faites-vous payer immédiatement !
+        </h1>
+
+        <!-- Centered Subtitle -->
+        <p class="text-base sm:text-lg md:text-xl text-slate-600 max-w-2xl mx-auto font-normal leading-relaxed mb-8 sm:mb-10 px-2">
+          La facture la plus rapide d'Afrique. Zéro relance manuelle, encaissement direct en FCFA.
+        </p>
+
+        <!-- Main Hero CTA Button with on-hover and on-click micro-animations -->
+        <div class="flex items-center justify-center mb-8 sm:mb-10 relative z-20">
+          <a class="hero-cta-btn group" href="#interactive-invoice" id="hero-main-cta">
+            <span>Commencer gratuitement</span>
+            <svg class="w-4 h-4 fill-none stroke-current stroke-2 cta-arrow-icon" viewBox="0 0 24 24">
+              <path d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+          </a>
+        </div>
+
+        <!-- Social Proof Headline -->
+        <p class="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto font-medium mb-8 leading-normal px-4">
+          Adopté par plus de 5 000 entreprises et professionnels indépendants à Dakar, Abidjan, Douala et Lomé.
+        </p>
+
+        <!-- Partner Logos Row -->
+        <div class="flex flex-wrap items-center justify-center gap-6 sm:gap-12 opacity-75 grayscale hover:grayscale-0 transition-all duration-300 max-w-5xl mx-auto mb-10 sm:mb-14 px-2">
+          <div class="flex items-center gap-2 text-slate-800 font-bold text-sm sm:text-base tracking-tight hover:text-indigo-600 transition-colors">
+            <svg class="w-5 h-5 text-sky-500 fill-current" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M8 12l2.5 3L16 9" fill="white"></path></svg>
+            <span class="font-black tracking-tight">Wave</span><span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider ml-0.5">Business</span>
+          </div>
+          <div class="flex items-center gap-2 text-slate-800 font-bold text-sm sm:text-base tracking-tight hover:text-orange-600 transition-colors">
+            <span class="w-4 h-4 rounded-full bg-orange-500 inline-flex items-center justify-center"><span class="w-2 h-2 rounded-full bg-white"></span></span>
+            <span class="font-black">Orange</span><span class="text-xs font-semibold text-slate-500">Money</span>
+          </div>
+          <div class="flex items-center gap-2 text-slate-800 font-bold text-sm sm:text-base tracking-tight hover:text-yellow-600 transition-colors">
+            <span class="w-4 h-4 rounded bg-yellow-400 inline-flex items-center justify-center text-[10px] font-black text-slate-900">M</span>
+            <span class="font-black tracking-wider">MTN</span><span class="text-xs font-semibold text-slate-500">MoMo</span>
+          </div>
+          <div class="flex items-center gap-2 text-slate-800 font-bold text-sm sm:text-base tracking-tight hover:text-blue-700 transition-colors">
+            <svg class="w-5 h-5 text-blue-700 fill-current" viewBox="0 0 24 24"><path d="M4 6h16v3H4zm2 5h12v3H6zm3 5h6v3H9z"></path></svg>
+            <span class="font-black">Ecobank</span>
+          </div>
+          <div class="flex items-center gap-2 text-slate-800 font-bold text-sm sm:text-base tracking-tight hover:text-emerald-700 transition-colors">
+            <svg class="w-5 h-5 text-emerald-600 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span class="font-black tracking-tight">Teranga</span><span class="text-xs text-slate-500 font-medium">SARL</span>
+          </div>
+          <div class="flex items-center gap-2 text-slate-800 font-bold text-sm sm:text-base tracking-tight hover:text-indigo-700 transition-colors">
+            <svg class="w-5 h-5 text-indigo-600 fill-current" viewBox="0 0 24 24"><rect height="18" rx="4" width="18" x="3" y="3"></rect><path d="M7 12h10M12 7v10" fill="white"></path></svg>
+            <span class="font-black tracking-tight">Kora</span><span class="text-xs text-slate-500 font-medium">Logistics</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Interactive Live Invoice Mockup Preview -->
+    <section class="px-4 sm:px-6 relative z-20 pb-16">
+      <div class="mt-6 sm:mt-10 text-left max-w-4xl mx-auto bg-white rounded-3xl border border-slate-200/90 shadow-2xl p-5 sm:p-10 relative overflow-hidden" data-purpose="interactive-dashboard-mockup" id="interactive-invoice">
+        
+        <div class="flex flex-wrap items-center justify-between border-b border-slate-100 pb-5 sm:pb-6 gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-brand-deep text-white flex items-center justify-center font-bold text-lg shadow-sm">
+              GF
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="font-bold text-slate-900 text-base sm:text-lg">FACTURE N° 2026-084</h3>
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">Prête à envoyer</span>
+              </div>
+              <p class="text-xs text-slate-500">Émise aujourd'hui • Échéance: à réception</p>
+            </div>
+          </div>
+          
+          <!-- Currency Toggle -->
+          <div class="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-semibold text-slate-600">
+            <button class="currency-toggle-btn active bg-white text-brand-navy shadow-sm px-3 py-1.5 rounded-lg transition-all" data-curr="FCFA" type="button">FCFA (XOF)</button>
+            <button class="currency-toggle-btn px-3 py-1.5 rounded-lg text-slate-500 hover:text-brand-navy transition-all" data-curr="EUR" type="button">EUR (€)</button>
+            <button class="currency-toggle-btn px-3 py-1.5 rounded-lg text-slate-500 hover:text-brand-navy transition-all" data-curr="USD" type="button">USD ($)</button>
+          </div>
+        </div>
+
+        <!-- Billing Info Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 my-5 sm:my-6 text-sm">
+          <div class="bg-slate-50/70 p-4 rounded-2xl border border-slate-100">
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Émetteur</span>
+            <p class="font-bold text-slate-900">Studio Teranga Creatives SARL</p>
+            <p class="text-slate-500 text-xs">NINEA : 009234812 2V3 • Dakar, Sénégal</p>
+            <p class="text-slate-500 text-xs">contact@studioteranga.sn</p>
+          </div>
+          <div class="bg-slate-50/70 p-4 rounded-2xl border border-slate-100">
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Client Facturé</span>
+            <p class="font-bold text-slate-900">Kora Logistics Côte d'Ivoire</p>
+            <p class="text-slate-500 text-xs">Abidjan, Cocody Riviera 3</p>
+            <p class="text-slate-500 text-xs">finance@koralogistics.ci</p>
+          </div>
+        </div>
+
+        <!-- Interactive Calculator Table -->
+        <div class="overflow-x-auto -mx-2 sm:mx-0">
+          <table class="w-full text-left text-sm min-w-[560px]" id="invoice-items-table">
+            <thead>
+              <tr class="border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                <th class="py-3 pr-4">Description de la prestation</th>
+                <th class="py-3 px-3 text-center w-24">Quantité</th>
+                <th class="py-3 px-3 text-right w-36">Prix Unit. HT</th>
+                <th class="py-3 pl-3 text-right w-36">Total HT</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr>
+                <td class="py-3.5 pr-4">
+                  <p class="font-semibold text-slate-800">Conception identité visuelle &amp; UI Kit</p>
+                  <span class="text-xs text-slate-400">Design système Figma, livrables haute résolution</span>
+                </td>
+                <td class="py-3.5 px-3 text-center">
+                  <input class="w-16 text-center text-sm border-slate-200 rounded-lg p-1 bg-slate-50 focus:bg-white font-medium" id="qty-1" max="100" min="1" type="number" value="1"/>
+                </td>
+                <td class="py-3.5 px-3 text-right">
+                  <input class="w-28 text-right text-sm border-slate-200 rounded-lg p-1 bg-slate-50 focus:bg-white font-mono font-medium" id="price-1" step="5000" type="number" value="350000"/>
+                </td>
+                <td class="py-3.5 pl-3 text-right font-mono font-semibold text-slate-900 whitespace-nowrap" id="row-total-1">
+                  350 000 FCFA
+                </td>
+              </tr>
+              <tr>
+                <td class="py-3.5 pr-4">
+                  <p class="font-semibold text-slate-800">Développement Frontend Webflow / Tailwind</p>
+                  <span class="text-xs text-slate-400">Intégration responsive &amp; optimisation SEO mobile</span>
+                </td>
+                <td class="py-3.5 px-3 text-center">
+                  <input class="w-16 text-center text-sm border-slate-200 rounded-lg p-1 bg-slate-50 focus:bg-white font-medium" id="qty-2" max="100" min="1" type="number" value="2"/>
+                </td>
+                <td class="py-3.5 px-3 text-right">
+                  <input class="w-28 text-right text-sm border-slate-200 rounded-lg p-1 bg-slate-50 focus:bg-white font-mono font-medium" id="price-2" step="5000" type="number" value="150000"/>
+                </td>
+                <td class="py-3.5 pl-3 text-right font-mono font-semibold text-slate-900 whitespace-nowrap" id="row-total-2">
+                  300 000 FCFA
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Total Calculation Breakdown -->
+        <div class="mt-6 pt-4 border-t border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+          <div class="w-full md:w-auto">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Options de règlement intégrées</span>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-sky-50 text-sky-700 rounded-lg text-xs font-semibold border border-sky-200">
+                <span class="w-2 h-2 rounded-full bg-sky-500"></span> Wave QR Code
+              </span>
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-50 text-orange-700 rounded-lg text-xs font-semibold border border-orange-200">
+                <span class="w-2 h-2 rounded-full bg-orange-500"></span> Orange Money
+              </span>
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-yellow-50 text-yellow-800 rounded-lg text-xs font-semibold border border-yellow-200">
+                <span class="w-2 h-2 rounded-full bg-yellow-500"></span> MTN MoMo
+              </span>
+            </div>
+          </div>
+
+          <div class="w-full md:w-72 bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2">
+            <div class="flex justify-between text-xs text-slate-500">
+              <span>Total HT</span>
+              <span class="font-mono font-medium text-slate-700" id="display-subtotal">650 000 FCFA</span>
+            </div>
+            <div class="flex justify-between text-xs text-slate-500">
+              <span class="flex items-center gap-1">
+                TVA légale (18%)
+                <span class="text-[10px] text-indigo-600 bg-indigo-50 px-1 rounded font-bold">Auto</span>
+              </span>
+              <span class="font-mono font-medium text-slate-700" id="display-tva">117 000 FCFA</span>
+            </div>
+            <div class="border-t border-slate-200 pt-2 flex justify-between text-sm font-extrabold text-brand-navy">
+              <span>Total TTC à payer</span>
+              <span class="font-mono text-base text-brand-deep" id="display-total">767 000 FCFA</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-8 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
+          <span class="text-xs text-slate-400">💡 Modifiez les quantités ou prix pour voir le calcul automatique en direct.</span>
+          <button class="inline-flex items-center gap-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 rounded-xl shadow transition-all" id="copy-link-btn" type="button">
+            <svg class="w-4 h-4 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+              <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            <span>Copier le lien de paiement direct</span>
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Pain Points -->
+    <section class="py-16 sm:py-24 bg-white border-y border-slate-100 relative" data-purpose="pain-points-section">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
+          <span class="text-xs font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1 rounded-full">Le constat</span>
+          <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-brand-navy mt-4 mb-4 tracking-tight">
+            Pourquoi 80% des entrepreneurs africains perdent du temps et des revenus
+          </h2>
+          <p class="text-slate-500 text-sm sm:text-base">
+            Gérer une entreprise est déjà exigeant. Ne laissez pas un système de facturation archaïque freiner votre croissance.
+          </p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+          <div class="bg-brand-surface p-7 sm:p-8 rounded-3xl border border-slate-200/80 card-hover-lift">
+            <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-xl mb-6 shadow-sm">✕</div>
+            <h3 class="font-bold text-lg text-slate-900 mb-2">Modèles Word et Excel cassés</h3>
+            <p class="text-slate-600 text-sm leading-relaxed">Mises en page désalignées, formules erronées, logos flous. Une facture amateur dégrade immédiatement la crédibilité auprès des grands comptes.</p>
+          </div>
+          <div class="bg-brand-surface p-7 sm:p-8 rounded-3xl border border-slate-200/80 card-hover-lift">
+            <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-xl mb-6 shadow-sm">%</div>
+            <h3 class="font-bold text-lg text-slate-900 mb-2">Calcul manuel de la TVA (18%)</h3>
+            <p class="text-slate-600 text-sm leading-relaxed">Erreurs d'arrondis sur les montants HT/TTC, confusion sur les acomptes et pénalités fiscales évitables lors des déclarations comptables.</p>
+          </div>
+          <div class="bg-brand-surface p-7 sm:p-8 rounded-3xl border border-slate-200/80 card-hover-lift">
+            <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xl mb-6 shadow-sm">⏳</div>
+            <h3 class="font-bold text-lg text-slate-900 mb-2">Relances manuelles embarrassantes</h3>
+            <p class="text-slate-600 text-sm leading-relaxed">Perte de trace des créances, relances oubliées et manque de moyens de paiement locaux instantanés pour vos clients.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bento Features -->
+    <section class="py-16 sm:py-24 bg-brand-surface" data-purpose="bento-grid-features" id="fonctionnalites">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
+          <span class="text-xs font-bold text-emerald-600 uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full">Pensé pour l'Afrique</span>
+          <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-brand-navy mt-4 mb-4 tracking-tight">
+            Tout ce dont vous avez besoin pour facturer &amp; être payé
+          </h2>
+          <p class="text-slate-500 text-sm sm:text-base">Des fonctionnalités taillées pour le contexte commercial d'Afrique de l'Ouest et Centrale.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="md:col-span-2 bg-white rounded-3xl p-7 sm:p-10 border border-slate-200/80 shadow-soft-card flex flex-col justify-between card-hover-lift">
+            <div>
+              <div class="w-10 h-10 rounded-xl bg-brand-deep text-white flex items-center justify-center mb-6 shadow-sm">
+                <svg class="w-5 h-5 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </div>
+              <h3 class="text-xl sm:text-2xl font-bold text-slate-900 mb-3">Factures conformes avec QR Code de certification</h3>
+              <p class="text-slate-600 text-sm sm:text-base leading-relaxed max-w-xl">Chaque facture générée embarque un QR Code sécurisé et les mentions obligatoires conformes aux réglementations fiscales de l'UEMOA et CEMAC (NINEA, RCCM, centre fiscal).</p>
+            </div>
+            <div class="mt-8 pt-6 border-t border-slate-100 flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-500">
+              <span class="flex items-center gap-1.5 text-emerald-600">✓ Conforme DGI &amp; UEMOA</span>
+              <span class="flex items-center gap-1.5 text-indigo-600">✓ Export PDF Vectoriel</span>
+            </div>
+          </div>
+          <div class="bg-gradient-to-br from-brand-deep to-brand-primary text-white rounded-3xl p-7 sm:p-10 shadow-soft-card flex flex-col justify-between card-hover-lift">
+            <div>
+              <div class="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center mb-6">
+                <svg class="w-5 h-5 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </div>
+              <h3 class="text-xl sm:text-2xl font-bold mb-3">Encaissement Mobile Money natif</h3>
+              <p class="text-slate-300 text-sm leading-relaxed">Vos clients paient directement en 1 clic par Wave, Orange Money ou carte bancaire. Les fonds arrivent directement sur votre compte.</p>
+            </div>
+            <div class="mt-8 pt-6 border-t border-white/10 flex items-center justify-between text-xs text-slate-300">
+              <span>Délai d'encaissement</span>
+              <span class="font-bold text-emerald-400">Instantané</span>
+            </div>
+          </div>
+          <div class="bg-white rounded-3xl p-7 sm:p-10 border border-slate-200/80 shadow-soft-card flex flex-col justify-between card-hover-lift">
+            <div>
+              <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-6 shadow-sm">
+                <svg class="w-5 h-5 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </div>
+              <h3 class="text-xl font-bold text-slate-900 mb-2">Relances WhatsApp &amp; SMS</h3>
+              <p class="text-slate-600 text-sm leading-relaxed">Programmez des notifications douces par WhatsApp ou SMS avant et après l'échéance. Réduisez vos retards de paiement de 65%.</p>
+            </div>
+            <div class="mt-6 pt-4 border-t border-slate-100 text-xs font-semibold text-slate-500">Zéro friction, vos clients apprécient.</div>
+          </div>
+          <div class="md:col-span-2 bg-white rounded-3xl p-7 sm:p-10 border border-slate-200/80 shadow-soft-card flex flex-col justify-between card-hover-lift">
+            <div>
+              <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-6 shadow-sm">
+                <svg class="w-5 h-5 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </div>
+              <h3 class="text-xl sm:text-2xl font-bold text-slate-900 mb-3">Rapports financiers &amp; Export comptable SYSCOHADA</h3>
+              <p class="text-slate-600 text-sm sm:text-base leading-relaxed max-w-xl">Transmettez en un clic vos journaux de ventes et récapitulatifs de TVA collectée à votre expert-comptable au format Excel ou PDF certifié.</p>
+            </div>
+            <div class="mt-8 pt-6 border-t border-slate-100 flex flex-wrap items-center gap-4 sm:gap-6 text-xs font-semibold text-slate-500">
+              <span>Multi-devises (FCFA, EUR, USD)</span>
+              <span>• Grand livre des ventes</span>
+              <span>• Tableau de bord de trésorerie</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="py-16 sm:py-24 bg-white border-t border-slate-100" data-purpose="how-it-works-timeline" id="comment-ca-marche">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="text-center max-w-2xl mx-auto mb-14 sm:mb-20">
+          <span class="text-xs font-bold text-brand-deep uppercase tracking-widest bg-brand-soft px-3 py-1 rounded-full">Simplicité radicale</span>
+          <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-brand-navy mt-4 mb-4 tracking-tight">Opérationnel en 3 étapes rapides</h2>
+          <p class="text-slate-500 text-sm sm:text-base">Aucun paramétrage complexe. Vous êtes prêt à émettre votre première facture en moins de 2 minutes.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-10 relative">
+          <div class="relative text-center md:text-left">
+            <div class="w-14 h-14 rounded-2xl bg-brand-deep text-white font-mono font-bold text-xl flex items-center justify-center mx-auto md:mx-0 mb-6 shadow-btn-glow">01</div>
+            <h3 class="text-xl font-bold text-slate-900 mb-2">Créez votre profil</h3>
+            <p class="text-slate-600 text-sm leading-relaxed">Renseignez le nom de votre entreprise, votre logo et vos identifiants fiscaux (NINEA, RCCM).</p>
+          </div>
+          <div class="relative text-center md:text-left">
+            <div class="w-14 h-14 rounded-2xl bg-indigo-600 text-white font-mono font-bold text-xl flex items-center justify-center mx-auto md:mx-0 mb-6 shadow-btn-glow">02</div>
+            <h3 class="text-xl font-bold text-slate-900 mb-2">Émettez la facture</h3>
+            <p class="text-slate-600 text-sm leading-relaxed">Ajoutez vos prestations, la TVA 18% est calculée automatiquement. Personnalisez les couleurs selon votre marque.</p>
+          </div>
+          <div class="relative text-center md:text-left">
+            <div class="w-14 h-14 rounded-2xl bg-emerald-600 text-white font-mono font-bold text-xl flex items-center justify-center mx-auto md:mx-0 mb-6 shadow-btn-glow">03</div>
+            <h3 class="text-xl font-bold text-slate-900 mb-2">Encaissez sans stress</h3>
+            <p class="text-slate-600 text-sm leading-relaxed">Envoyez le lien sécurisé par WhatsApp ou Email. Votre client règle en un clic via Mobile Money.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="py-16 sm:py-24 bg-brand-surface border-t border-slate-100" data-purpose="wall-of-love" id="temoignages">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
+          <span class="text-xs font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1 rounded-full">Wall of Love</span>
+          <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-brand-navy mt-4 mb-4 tracking-tight">Ce que disent nos utilisateurs</h2>
+          <p class="text-slate-500 text-sm sm:text-base">Des milliers d'indépendants et gérants de PME ont accéléré leurs rentrées de fonds.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+          <div class="bg-white p-7 sm:p-8 rounded-3xl border border-slate-200/80 shadow-soft-card flex flex-col justify-between card-hover-lift">
+            <div>
+              <div class="flex items-center gap-1 text-amber-400 mb-4 text-sm tracking-widest">★★★★★</div>
+              <p class="text-slate-700 text-sm sm:text-base leading-relaxed italic mb-6">« Mes clients corporate à Dakar ont été impressionnés par la netteté des factures. L'intégration directe du paiement Wave a réduit mes délais de paiement de 3 semaines à 48 heures. »</p>
+            </div>
+            <div class="flex items-center gap-3 pt-4 border-t border-slate-100">
+              <div class="w-11 h-11 rounded-full bg-brand-deep text-white font-bold flex items-center justify-center text-sm shadow-sm flex-shrink-0">FN</div>
+              <div>
+                <p class="font-bold text-sm text-slate-900">Fatou Ndiaye</p>
+                <p class="text-xs text-slate-500">Fondatrice, Teranga Agency (Dakar)</p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white p-7 sm:p-8 rounded-3xl border border-slate-200/80 shadow-soft-card flex flex-col justify-between card-hover-lift">
+            <div>
+              <div class="flex items-center gap-1 text-amber-400 mb-4 text-sm tracking-widest">★★★★★</div>
+              <p class="text-slate-700 text-sm sm:text-base leading-relaxed italic mb-6">« Le calcul automatique de la TVA 18% m'évite les erreurs bêtes que je faisais sur Excel. Mon comptable à Abidjan est ravi à la fin de chaque mois. Un outil indispensable. »</p>
+            </div>
+            <div class="flex items-center gap-3 pt-4 border-t border-slate-100">
+              <div class="w-11 h-11 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-sm flex-shrink-0">KK</div>
+              <div>
+                <p class="font-bold text-sm text-slate-900">Kouamé Konan</p>
+                <p class="text-xs text-slate-500">Consultant Cloud &amp; Dev (Abidjan)</p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white p-7 sm:p-8 rounded-3xl border border-slate-200/80 shadow-soft-card flex flex-col justify-between card-hover-lift">
+            <div>
+              <div class="flex items-center gap-1 text-amber-400 mb-4 text-sm tracking-widest">★★★★★</div>
+              <p class="text-slate-700 text-sm sm:text-base leading-relaxed italic mb-6">« Les relances automatiques par WhatsApp ont sauvé ma trésorerie. Plus besoin d'appeler moi-même pour réclamer mes paiements. C'est poli, professionnel et ultra efficace. »</p>
+            </div>
+            <div class="flex items-center gap-3 pt-4 border-t border-slate-100">
+              <div class="w-11 h-11 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-sm shadow-sm flex-shrink-0">BE</div>
+              <div>
+                <p class="font-bold text-sm text-slate-900">Boris Eto'o</p>
+                <p class="text-xs text-slate-500">Gérant, Krystal Logix (Douala)</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="py-16 sm:py-24 bg-white border-t border-slate-100" data-purpose="pricing-plans" id="tarifs">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
+          <span class="text-xs font-bold text-brand-deep uppercase tracking-widest bg-brand-soft px-3 py-1 rounded-full">Tarification transparente</span>
+          <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-brand-navy mt-4 mb-4 tracking-tight">Choisissez la formule adaptée à votre activité</h2>
+          <p class="text-slate-500 text-sm sm:text-base mb-8">Pas de frais cachés. Annulez ou changez de forfait à tout moment.</p>
+          
+          <div class="inline-flex items-center bg-slate-100 p-1.5 rounded-full border border-slate-200" data-purpose="pricing-frequency-toggle">
+            <button class="px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-semibold bg-white text-brand-navy shadow-sm transition-all" id="toggle-monthly" type="button">Facturation mensuelle</button>
+            <button class="px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-semibold text-slate-500 hover:text-brand-navy transition-all flex items-center gap-1.5" id="toggle-yearly" type="button">
+              <span>Annuel</span>
+              <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">-20%</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch max-w-md lg:max-w-none mx-auto">
+          <div class="bg-brand-surface rounded-3xl p-7 sm:p-8 border border-slate-200 flex flex-col justify-between card-hover-lift">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-2">Gratuit</span>
+              <h3 class="text-2xl font-bold text-slate-900 mb-2">Starter</h3>
+              <p class="text-xs text-slate-500 mb-6">Idéal pour les indépendants qui débutent.</p>
+              <div class="mb-6">
+                <span class="text-4xl font-extrabold text-brand-navy">0</span>
+                <span class="text-sm font-semibold text-slate-500"> FCFA / mois</span>
+              </div>
+              <ul class="space-y-3 text-xs sm:text-sm text-slate-600">
+                <li class="flex items-center gap-2">✓ Jusqu'à 5 factures / mois</li>
+                <li class="flex items-center gap-2">✓ 1 compte utilisateur</li>
+                <li class="flex items-center gap-2">✓ Calcul auto TVA 18%</li>
+                <li class="flex items-center gap-2">✓ Export PDF standard</li>
+                <li class="flex items-center gap-2 text-slate-400">✕ Liens de paiement Mobile Money</li>
+              </ul>
+            </div>
+            <div class="mt-8 pt-6 border-t border-slate-200">
+              <a class="block w-full text-center py-3 px-4 rounded-xl font-semibold text-sm border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors" href="/login">Commencer gratuitement</a>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-3xl p-7 sm:p-8 border-2 border-indigo-600 shadow-pro-highlight relative flex flex-col justify-between -translate-y-0 lg:-translate-y-2 card-hover-lift">
+            <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-brand-deep text-white text-[11px] font-bold uppercase tracking-widest px-4 py-1 rounded-full shadow-md whitespace-nowrap">Recommandé</div>
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 block mb-2">Professionnel</span>
+              <h3 class="text-2xl font-bold text-slate-900 mb-2">Pro Business</h3>
+              <p class="text-xs text-slate-500 mb-6">Pour les freelances actifs et TPE en croissance.</p>
+              <div class="mb-6">
+                <span class="text-4xl font-extrabold text-brand-navy" id="pro-price">5 000</span>
+                <span class="text-sm font-semibold text-slate-500"> FCFA / mois</span>
+                <p class="text-[11px] text-emerald-600 font-semibold mt-1" id="pro-subtext">Facturé mensuellement</p>
+              </div>
+              <ul class="space-y-3 text-xs sm:text-sm text-slate-700">
+                <li class="flex items-center gap-2 font-medium">✓ <strong>Factures &amp; Devis illimités</strong></li>
+                <li class="flex items-center gap-2 font-medium">✓ Paiements Wave &amp; Orange Money</li>
+                <li class="flex items-center gap-2 font-medium">✓ Relances automatiques WhatsApp</li>
+                <li class="flex items-center gap-2 font-medium">✓ Personnalisation totale à votre marque</li>
+                <li class="flex items-center gap-2 font-medium">✓ QR Code de validation certifié</li>
+                <li class="flex items-center gap-2 font-medium">✓ Support WhatsApp prioritaire</li>
+              </ul>
+            </div>
+            <div class="mt-8 pt-6 border-t border-slate-100">
+              <a class="block w-full text-center py-3.5 px-4 rounded-xl font-bold text-sm bg-brand-deep hover:bg-brand-primary text-white shadow-btn-glow transition-all hover:scale-[1.02] active:scale-95" href="/login">Essayer 14 jours gratuits</a>
+            </div>
+          </div>
+
+          <div class="bg-brand-surface rounded-3xl p-7 sm:p-8 border border-slate-200 flex flex-col justify-between card-hover-lift">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-2">Entreprise</span>
+              <h3 class="text-2xl font-bold text-slate-900 mb-2">Cabinet &amp; SARL</h3>
+              <p class="text-xs text-slate-500 mb-6">Pour les structures établies et équipes commerciales.</p>
+              <div class="mb-6">
+                <span class="text-4xl font-extrabold text-brand-navy" id="biz-price">15 000</span>
+                <span class="text-sm font-semibold text-slate-500"> FCFA / mois</span>
+                <p class="text-[11px] text-emerald-600 font-semibold mt-1" id="biz-subtext">Facturé mensuellement</p>
+              </div>
+              <ul class="space-y-3 text-xs sm:text-sm text-slate-600">
+                <li class="flex items-center gap-2">✓ Tout le forfait Pro inclus</li>
+                <li class="flex items-center gap-2">✓ Multi-utilisateurs (jusqu'à 10)</li>
+                <li class="flex items-center gap-2">✓ Gestion multi-entreprises</li>
+                <li class="flex items-center gap-2">✓ Export comptable SYSCOHADA</li>
+                <li class="flex items-center gap-2">✓ Clé API &amp; Webhooks sur mesure</li>
+              </ul>
+            </div>
+            <div class="mt-8 pt-6 border-t border-slate-200">
+              <a class="block w-full text-center py-3 px-4 rounded-xl font-semibold text-sm border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors" href="/login">Contacter les ventes</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Final CTA Section -->
+    <section class="py-16 sm:py-20 bg-brand-surface relative overflow-hidden" data-purpose="bottom-cta-banner">
+      <div class="max-w-5xl mx-auto px-4 sm:px-6">
+        <div class="bg-gradient-to-br from-brand-deep via-[#1e0747] to-brand-primary text-white rounded-3xl p-7 sm:p-14 relative overflow-hidden shadow-2xl text-center">
+          <div aria-hidden="true" class="absolute -right-20 -bottom-20 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+          <div aria-hidden="true" class="absolute -left-20 -top-20 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="relative z-10 max-w-2xl mx-auto">
+            <span class="inline-block px-3 py-1 bg-white/10 text-indigo-200 text-xs font-semibold rounded-full uppercase tracking-wider mb-4">Rejoignez la nouvelle vague</span>
+            <h2 class="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-4 text-white">Prêt à vous faire payer sans délai ?</h2>
+            <p class="text-slate-300 text-sm sm:text-base mb-8 leading-relaxed">Créez votre première facture professionnelle dès aujourd'hui. Aucune carte bancaire requise pour démarrer.</p>
+            <form class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto" onsubmit="event.preventDefault(); alert('Merci ! Votre espace GesFacture est prêt.');">
+              <input class="w-full px-5 py-3.5 rounded-full text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 placeholder-slate-400 border-none font-medium" placeholder="votre-email@entreprise.com" required type="email"/>
+              <button class="whitespace-nowrap px-8 py-3.5 rounded-full bg-white text-brand-deep hover:bg-slate-100 font-bold text-sm shadow-md transition-all duration-200 hover:scale-105 active:scale-95" type="submit">Démarrer l'essai</button>
+            </form>
+            <p class="text-xs text-slate-400 mt-4">Essai gratuit 14 jours • Configuration en 2 minutes • Annulation libre</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-slate-50 border-t border-slate-200 pt-14 sm:pt-16 pb-12 text-slate-600" data-purpose="page-footer">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-10 pb-12 border-b border-slate-200">
+        <div class="md:col-span-2 pr-0 md:pr-6">
+          <div class="flex items-center gap-2.5 mb-4">
+            <div class="w-9 h-9 rounded-xl bg-brand-deep flex items-center justify-center text-white font-bold text-sm shadow-sm">GF</div>
+            <span class="font-bold text-xl tracking-tight text-[#110829]">Ges<span class="text-indigo-600">Facture</span></span>
+            <span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full ml-1">SaaS Africain</span>
+          </div>
+          <p class="text-xs text-slate-500 leading-relaxed mb-5 max-w-sm">La plateforme de facturation moderne, automatisée et conforme conçue pour propulser les PME et indépendants d'Afrique francophone.</p>
+          <div class="flex flex-wrap items-center gap-2 mb-6">
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px] font-semibold text-slate-700 shadow-sm"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>99.9% Uptime</div>
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px] font-semibold text-slate-700 shadow-sm"><svg class="w-3.5 h-3.5 text-indigo-600 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke-linecap="round" stroke-linejoin="round"></path></svg>SYSCOHADA &amp; UEMOA</div>
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px] font-semibold text-slate-700 shadow-sm"><svg class="w-3.5 h-3.5 text-slate-600 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><rect height="11" rx="2" width="16" x="4" y="11"></rect><path d="M7 11V7a5 5 0 0110 0v4"></path></svg>SSL 256-bit</div>
+          </div>
+          <div>
+            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-2">Restez informé des réformes fiscales</span>
+            <form class="flex items-center gap-2 max-w-sm" onsubmit="event.preventDefault(); alert('Merci pour votre inscription à la veille fiscale !');">
+              <input class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 placeholder-slate-400" placeholder="votre@email.com" required type="email"/>
+              <button class="px-4 py-2 text-xs font-bold text-white bg-brand-deep hover:bg-brand-primary rounded-xl transition-colors whitespace-nowrap shadow-sm" type="submit">S'abonner</button>
+            </form>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Produit</h4>
+          <ul class="space-y-2.5 text-xs text-slate-600">
+            <li><a class="hover:text-brand-deep transition-colors" href="#interactive-invoice">Générateur de facture</a></li>
+            <li><a class="hover:text-brand-deep transition-colors" href="#fonctionnalites">Paiements Mobile Money</a></li>
+            <li><a class="hover:text-brand-deep transition-colors" href="#fonctionnalites">Relances WhatsApp</a></li>
+            <li><a class="hover:text-brand-deep transition-colors" href="#tarifs">Tarifs &amp; Devises</a></li>
+            <li><a class="hover:text-brand-deep transition-colors" href="#interactive-invoice">Calculateur TVA 18%</a></li>
+            <li><a class="hover:text-brand-deep transition-colors" href="#fonctionnalites">QR Code certifié</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Ressources</h4>
+          <ul class="space-y-2.5 text-xs text-slate-600">
+            <li><a class="hover:text-brand-deep transition-colors" href="#comment-ca-marche">Guide fiscal UEMOA</a></li>
+            <li><a class="hover:text-brand-deep transition-colors" href="#comment-ca-marche">Modèles de devis Excel</a></li>
+            <li><a class="hover:text-brand-deep transition-colors" href="#temoignages">Blog des entrepreneurs</a></li>
+            <li><a class="hover:text-brand-deep transition-colors" href="#fonctionnalites">Export SYSCOHADA</a></li>
+            <li><a class="hover:text-brand-deep transition-colors" href="#">Centre d'assistance</a></li>
+            <li><a class="hover:text-brand-deep transition-colors" href="#">API Développeurs</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Légal &amp; Sécurité</h4>
+          <ul class="space-y-2.5 text-xs text-slate-600">
+            <li><a class="hover:text-brand-deep transition-colors" href="#">Mentions légales</a></li>
+            <li><a class="hover:text-brand-deep transition-colors" href="#">Politique de confidentialité</a></li>
+            <li><a class="hover:text-brand-deep transition-colors" href="#">Sécurité &amp; Chiffrement</a></li>
+            <li><a class="hover:text-brand-deep transition-colors" href="#">Conformité DGI / UEMOA</a></li>
+            <li><a class="hover:text-brand-deep transition-colors" href="#">Conditions générales</a></li>
+            <li><a class="hover:text-brand-deep transition-colors" href="#">Statut des services</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="pt-8 flex flex-col md:flex-row items-center justify-between text-xs text-slate-500 gap-4">
+        <div class="flex flex-wrap items-center gap-3">
+          <span>© 2026 GesFacture Inc. Tous droits réservés.</span>
+          <span>•</span>
+          <span class="font-medium text-slate-700">Fait avec passion et fierté en Afrique 🌍</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-4 text-xs">
+          <div class="flex items-center gap-1.5 bg-white border border-slate-200 px-2.5 py-1 rounded-lg text-slate-600 font-medium">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span>Zone FCFA (BCEAO / BEAC)</span>
+          </div>
+          <div class="flex items-center gap-3 text-slate-600 font-medium">
+            <a class="hover:text-brand-deep transition-colors" href="#">LinkedIn</a>
+            <span>•</span>
+            <a class="hover:text-brand-deep transition-colors" href="#">Twitter / X</a>
+            <span>•</span>
+            <a class="hover:text-brand-deep transition-colors" href="#">WhatsApp</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="landing.js"></script>
+</body>
+</html>
