@@ -123,8 +123,7 @@ export function LandingHero() {
           className="hidden md:block absolute -left-8 bottom-4 rotate-[12deg] pointer-events-none z-10 select-none opacity-95"
         >
           <div
-            className="w-44 sm:w-52 h-28 bg-white rounded-2xl border border-slate-200/90 p-3.5 shadow-2xl flex flex-col justify-between"
-            style={{ boxShadow: "0 22px 40px -10px rgba(0,0,0,0.18)" }}
+            className="w-44 sm:w-52 h-28 bg-white rounded-2xl border border-slate-200/90 p-3.5 shadow-2xl flex flex-col justify-between invoice-floating-card-shadow"
           >
             <div className="flex items-center justify-between">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -172,18 +171,18 @@ export function LandingHero() {
           </div>
         </div>
 
-        {/* Bold Punchy Centered H1 */}
-        <h1 className="hero-heading font-extrabold text-4xl sm:text-5xl md:text-6xl lg:text-[76px] text-[#110829] tracking-tight max-w-4xl mx-auto mb-4 sm:mb-5 leading-[1.06]">
-          Faites-vous payer <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">immédiatement</span>.
+        {/* Bold Dramatic Centered H1 */}
+        <h1 className="hero-heading font-extrabold text-5xl sm:text-7xl md:text-[88px] text-[#110829] tracking-tight max-w-4xl mx-auto mb-6">
+          Faites-vous payer immédiatement !
         </h1>
 
-        {/* Centered Punchy Subtitle */}
-        <p className="text-base sm:text-lg md:text-xl text-slate-600 max-w-2xl mx-auto font-normal leading-relaxed mb-7 sm:mb-9 px-2">
-          Créez et envoyez des factures professionnelles en 30 secondes. Vos clients règlent en un clic via Wave, Orange Money ou MTN. Encaissez directement, sans relance manuelle.
+        {/* Centered Subtitle */}
+        <p className="text-base sm:text-xl text-slate-600 max-w-2xl mx-auto font-normal leading-relaxed mb-10">
+          La facture la plus rapide d'Afrique. Zéro relance manuelle, encaissement direct en FCFA.
         </p>
 
         {/* Single Compact & Sleek Capsule CTA Button */}
-        <div className="flex items-center justify-center mb-8 sm:mb-10 relative z-20">
+        <div className="flex items-center justify-center mb-10 relative z-20">
           <Link
             href="#interactive-invoice"
             onClick={handleCtaClick}
@@ -206,7 +205,7 @@ export function LandingHero() {
 
             <span>Commencer gratuitement</span>
             <svg
-              className="w-3.5 h-3.5 fill-none stroke-current stroke-2 cta-arrow-icon"
+              className="w-4 h-4 fill-none stroke-current stroke-2 cta-arrow-icon"
               viewBox="0 0 24 24"
             >
               <path
@@ -219,87 +218,64 @@ export function LandingHero() {
         </div>
 
         {/* Centered Social Proof Headline */}
-        <p className="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto font-medium mb-6 sm:mb-8 leading-normal px-4">
+        <p className="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto font-medium mb-8 leading-normal px-4">
           Adopté par plus de 5 000 entreprises et professionnels indépendants à Dakar, Abidjan, Douala et Lomé.
         </p>
 
-        {/* Partner & Corporate Ecosystem Logos Row (Freshworks, Outreach, Pipedrive, Wave, Orange Money, MTN MoMo, Ecobank) */}
-        <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10 opacity-80 hover:opacity-100 transition-opacity duration-300 max-w-5xl mx-auto mb-10 sm:mb-14 px-2">
-          
-          {/* Freshworks Logo */}
-          <div className="flex items-center gap-2 text-slate-700 hover:text-slate-900 transition-colors py-1 px-2">
-            <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 32 32" fill="none">
-              <circle cx="16" cy="6" r="4" fill="#F48120" />
-              <circle cx="26" cy="16" r="4" fill="#E84855" />
-              <circle cx="16" cy="26" r="4" fill="#00A887" />
-              <circle cx="6" cy="16" r="4" fill="#1C64F2" />
+        {/* Partner Logos Row */}
+        <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-14 opacity-70 grayscale hover:grayscale-0 transition-all duration-300 max-w-5xl mx-auto mb-16 px-2">
+          {/* Wave */}
+          <div className="flex items-center gap-2 text-slate-800 font-bold text-sm sm:text-base tracking-tight hover:text-indigo-600 transition-colors">
+            <svg className="w-5 h-5 text-sky-500 fill-current" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M8 12l2.5 3L16 9" fill="white"></path>
             </svg>
-            <span className="font-bold tracking-tight text-sm sm:text-base">freshworks</span>
-          </div>
-
-          {/* Outreach Logo */}
-          <div className="flex items-center gap-2 text-slate-700 hover:text-[#5932EA] transition-colors py-1 px-2">
-            <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none">
-              <rect x="2" y="8" width="3" height="8" rx="1.5" fill="#5932EA" />
-              <rect x="8" y="4" width="3" height="16" rx="1.5" fill="#5932EA" />
-              <rect x="14" y="2" width="3" height="20" rx="1.5" fill="#5932EA" />
-              <rect x="20" y="7" width="3" height="10" rx="1.5" fill="#5932EA" />
-            </svg>
-            <span className="font-bold tracking-tight text-sm sm:text-base">outreach</span>
-          </div>
-
-          {/* Pipedrive Logo */}
-          <div className="flex items-center gap-2 text-slate-700 hover:text-[#017737] transition-colors py-1 px-2">
-            <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="11" fill="#017737" />
-              <path
-                d="M10 7h3.5a3.5 3.5 0 010 7H10v4H8V7h2zm0 5h3.5a1.5 1.5 0 000-3H10v3z"
-                fill="white"
-              />
-            </svg>
-            <span className="font-black tracking-tight text-sm sm:text-base">pipedrive</span>
-          </div>
-
-          {/* Wave Business */}
-          <div className="flex items-center gap-2 text-slate-700 hover:text-sky-600 transition-colors py-1 px-2">
-            <svg className="w-5 h-5 text-sky-500 fill-current flex-shrink-0" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10" fill="#00D1FF"></circle>
-              <path d="M7 12c1.5-2 3-3 5-3s3.5 1 5 3c-1.5 2-3 3-5 3s-3.5-1-5-3z" fill="white"></path>
-            </svg>
-            <span className="font-black tracking-tight text-sm sm:text-base">
-              Wave{" "}
-              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                Business
-              </span>
-            </span>
+            <span className="font-black tracking-tight">Wave</span>
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider ml-0.5">Business</span>
           </div>
 
           {/* Orange Money */}
-          <div className="flex items-center gap-2 text-slate-700 hover:text-[#FF7900] transition-colors py-1 px-2">
-            <span className="w-4 h-4 rounded-md bg-[#FF7900] inline-flex items-center justify-center flex-shrink-0">
+          <div className="flex items-center gap-2 text-slate-800 font-bold text-sm sm:text-base tracking-tight hover:text-orange-600 transition-colors">
+            <span className="w-4 h-4 rounded-full bg-orange-500 inline-flex items-center justify-center">
               <span className="w-2 h-2 rounded-full bg-white"></span>
             </span>
-            <span className="font-black text-sm sm:text-base">
-              Orange <span className="font-semibold text-xs text-slate-500">Money</span>
-            </span>
+            <span className="font-black">Orange</span>
+            <span className="text-xs font-semibold text-slate-500">Money</span>
           </div>
 
           {/* MTN MoMo */}
-          <div className="flex items-center gap-2 text-slate-700 hover:text-yellow-600 transition-colors py-1 px-2">
-            <span className="w-5 h-4 rounded bg-[#FFCC00] inline-flex items-center justify-center text-[9px] font-black text-[#002B49] flex-shrink-0">
-              MoMo
-            </span>
-            <span className="font-black tracking-wider text-sm sm:text-base">MTN</span>
+          <div className="flex items-center gap-2 text-slate-800 font-bold text-sm sm:text-base tracking-tight hover:text-yellow-600 transition-colors">
+            <span className="w-4 h-4 rounded bg-yellow-400 inline-flex items-center justify-center text-[10px] font-black text-slate-900">M</span>
+            <span className="font-black tracking-wider">MTN</span>
+            <span className="text-xs font-semibold text-slate-500">MoMo</span>
           </div>
 
           {/* Ecobank */}
-          <div className="flex items-center gap-2 text-slate-700 hover:text-[#005A9C] transition-colors py-1 px-2">
-            <svg className="w-5 h-5 text-[#005A9C] fill-current flex-shrink-0" viewBox="0 0 24 24">
+          <div className="flex items-center gap-2 text-slate-800 font-bold text-sm sm:text-base tracking-tight hover:text-blue-700 transition-colors">
+            <svg className="w-5 h-5 text-blue-700 fill-current" viewBox="0 0 24 24">
               <path d="M4 6h16v3H4zm2 5h12v3H6zm3 5h6v3H9z"></path>
             </svg>
-            <span className="font-black text-sm sm:text-base">Ecobank</span>
+            <span className="font-black">Ecobank</span>
           </div>
 
+          {/* Teranga SARL */}
+          <div className="flex items-center gap-2 text-slate-800 font-bold text-sm sm:text-base tracking-tight hover:text-emerald-700 transition-colors">
+            <svg className="w-5 h-5 text-emerald-600 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+              <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" strokeLinecap="round" strokeLinejoin="round"></path>
+            </svg>
+            <span className="font-black tracking-tight">Teranga</span>
+            <span className="text-xs text-slate-500 font-medium">SARL</span>
+          </div>
+
+          {/* Kora Logistics */}
+          <div className="flex items-center gap-2 text-slate-800 font-bold text-sm sm:text-base tracking-tight hover:text-indigo-700 transition-colors">
+            <svg className="w-5 h-5 text-indigo-600 fill-current" viewBox="0 0 24 24">
+              <rect height="18" rx="4" width="18" x="3" y="3"></rect>
+              <path d="M7 12h10M12 7v10" fill="white"></path>
+            </svg>
+            <span className="font-black tracking-tight">Kora</span>
+            <span className="text-xs text-slate-500 font-medium">Logistics</span>
+          </div>
         </div>
 
       </div>

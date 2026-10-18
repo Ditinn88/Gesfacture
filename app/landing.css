@@ -224,6 +224,10 @@
   box-shadow: 0 30px 70px -15px rgba(17, 8, 41, 0.16), 0 0 1px 1px rgba(17, 8, 41, 0.08);
 }
 
+.invoice-floating-card-shadow {
+  box-shadow: 0 22px 40px -10px rgba(0, 0, 0, 0.18);
+}
+
 .card-hover-lift {
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
               box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
