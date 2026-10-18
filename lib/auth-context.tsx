@@ -9,7 +9,8 @@ interface AuthContextType {
   session: Session | null;
   isLoading: boolean;
   isAuthModalOpen: boolean;
-  openAuthModal: () => void;
+  authModalTab: "login" | "signup" | "forgot" | "reset";
+  openAuthModal: (tab?: "login" | "signup" | "forgot" | "reset") => void;
   closeAuthModal: () => void;
   signInWithEmail: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUpWithEmail: (email: string, password: string, fullName?: string) => Promise<{ error: Error | null; requiresConfirmation?: boolean }>;
@@ -29,6 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalTab, setAuthModalTab] = useState<"login" | "signup" | "forgot" | "reset">("login");
 
   useEffect(() => {
     let isMounted = true;
@@ -103,7 +105,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const openAuthModal = () => setIsAuthModalOpen(true);
+  const openAuthModal = (tab: "login" | "signup" | "forgot" | "reset" = "login") => {
+    setAuthModalTab(tab);
+    setIsAuthModalOpen(true);
+  };
   const closeAuthModal = () => setIsAuthModalOpen(false);
 
   const signInWithEmail = async (email: string, password: string) => {
@@ -414,6 +419,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         session,
         isLoading,
         isAuthModalOpen,
+        authModalTab,
         openAuthModal,
         closeAuthModal,
         signInWithEmail,

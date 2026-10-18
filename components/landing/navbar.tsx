@@ -17,7 +17,7 @@ const navLinks: NavItem[] = [
 ];
 
 export function LandingNavbar() {
-  const { user } = useAuth();
+  const { user, openAuthModal } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -83,21 +83,23 @@ export function LandingNavbar() {
             </Link>
           ) : (
             <>
-              <Link
-                href="/login"
-                className="text-xs sm:text-[13px] font-semibold text-slate-700 hover:text-indigo-600 px-2 sm:px-3 py-1.5 rounded-full hover:bg-slate-100 transition-colors"
+              <button
+                type="button"
+                onClick={() => openAuthModal("login")}
+                className="text-xs sm:text-[13px] font-semibold text-slate-700 hover:text-indigo-600 px-2 sm:px-3 py-1.5 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
                 id="nav-signin-cta"
               >
                 Connexion
-              </Link>
-              <Link
-                href="/login?tab=signup"
-                className="inline-flex items-center justify-center text-xs sm:text-[13px] font-bold text-white bg-[#110829] hover:bg-indigo-900 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-md transition-all duration-200 hover:scale-[1.03] active:scale-95 whitespace-nowrap"
+              </button>
+              <button
+                type="button"
+                onClick={() => openAuthModal("signup")}
+                className="inline-flex items-center justify-center text-xs sm:text-[13px] font-bold text-white bg-[#110829] hover:bg-indigo-900 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-md transition-all duration-200 hover:scale-[1.03] active:scale-95 whitespace-nowrap cursor-pointer"
                 id="nav-signup-cta"
               >
                 <span>Inscription</span>
                 <span className="hidden sm:inline">&nbsp;gratuite</span>
-              </Link>
+              </button>
             </>
           )}
 
@@ -161,20 +163,26 @@ export function LandingNavbar() {
                 </Link>
               ) : (
                 <>
-                  <Link
-                    href="/login"
-                    onClick={() => setMobileMenuOpen(false)}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      openAuthModal("login");
+                    }}
                     className="w-full text-center py-2.5 px-4 rounded-xl font-semibold text-sm border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
                   >
-                    Connexion (Sign In)
-                  </Link>
-                  <Link
-                    href="/login?tab=signup"
-                    onClick={() => setMobileMenuOpen(false)}
+                    Connexion
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      openAuthModal("signup");
+                    }}
                     className="w-full text-center py-2.5 px-4 rounded-xl font-bold text-sm bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md hover:opacity-95 transition-all"
                   >
-                    Créer un compte gratuit (Sign Up)
-                  </Link>
+                    Créer un compte gratuit
+                  </button>
                 </>
               )}
 

@@ -151,4 +151,143 @@ document.addEventListener("DOMContentLoaded", () => {
       if (bizSubtext) bizSubtext.textContent = "144 000 FCFA facturés annuellement (économisez 20%)";
     });
   }
+
+  // Close modal when clicking outside of modal card
+  const modalBackdrop = document.getElementById("auth-modal");
+  if (modalBackdrop) {
+    modalBackdrop.addEventListener("click", (e) => {
+      if (e.target === modalBackdrop) {
+        window.closeAuthModal();
+      }
+    });
+  }
+
+  // Close on ESC key
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      const modal = document.getElementById("auth-modal");
+      if (modal && !modal.classList.contains("hidden")) {
+        window.closeAuthModal();
+      }
+    }
+  });
 });
+
+// ==========================================
+// 4. Interactive Auth Modal Global Handlers
+// ==========================================
+window.openAuthModal = function (tab = "login") {
+  const modal = document.getElementById("auth-modal");
+  const card = document.getElementById("auth-modal-card");
+  if (!modal || !card) return;
+
+  window.switchAuthTab(tab);
+
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+  requestAnimationFrame(() => {
+    modal.classList.remove("opacity-0", "pointer-events-none");
+    modal.classList.add("opacity-100");
+    card.classList.remove("scale-95");
+    card.classList.add("scale-100");
+  });
+  document.body.style.overflow = "hidden";
+};
+
+window.closeAuthModal = function () {
+  const modal = document.getElementById("auth-modal");
+  const card = document.getElementById("auth-modal-card");
+  if (!modal || !card) return;
+
+  modal.classList.remove("opacity-100");
+  modal.classList.add("opacity-0", "pointer-events-none");
+  card.classList.remove("scale-100");
+  card.classList.add("scale-95");
+
+  setTimeout(() => {
+    modal.classList.remove("flex");
+    modal.classList.add("hidden");
+    document.body.style.overflow = "";
+  }, 250);
+};
+
+window.switchAuthTab = function (tab) {
+  const tabLogin = document.getElementById("auth-tab-login");
+  const tabSignup = document.getElementById("auth-tab-signup");
+  const formLogin = document.getElementById("auth-form-login");
+  const formSignup = document.getElementById("auth-form-signup");
+  const title = document.getElementById("auth-modal-title");
+  const subtitle = document.getElementById("auth-modal-subtitle");
+  const alertBox = document.getElementById("auth-alert");
+
+  if (alertBox) alertBox.classList.add("hidden");
+
+  if (tab === "signup") {
+    if (tabSignup) {
+      tabSignup.classList.add("bg-white", "text-slate-900", "shadow-sm");
+      tabSignup.classList.remove("text-slate-600");
+    }
+    if (tabLogin) {
+      tabLogin.classList.remove("bg-white", "text-slate-900", "shadow-sm");
+      tabLogin.classList.add("text-slate-600");
+    }
+
+    if (formLogin) formLogin.classList.add("hidden");
+    if (formSignup) formSignup.classList.remove("hidden");
+
+    if (title) title.textContent = "Créez votre compte gratuit";
+    if (subtitle) subtitle.textContent = "Commencez à facturer et encaisser en moins de 2 minutes.";
+  } else {
+    if (tabLogin) {
+      tabLogin.classList.add("bg-white", "text-slate-900", "shadow-sm");
+      tabLogin.classList.remove("text-slate-600");
+    }
+    if (tabSignup) {
+      tabSignup.classList.remove("bg-white", "text-slate-900", "shadow-sm");
+      tabSignup.classList.add("text-slate-600");
+    }
+
+    if (formSignup) formSignup.classList.add("hidden");
+    if (formLogin) formLogin.classList.remove("hidden");
+
+    if (title) title.textContent = "Accédez à votre espace";
+    if (subtitle) subtitle.textContent = "Gérez vos factures et encaissez par Wave & Mobile Money.";
+  }
+};
+
+window.togglePasswordVisibility = function (inputId) {
+  const input = document.getElementById(inputId);
+  if (input) {
+    input.type = input.type === "password" ? "text" : "password";
+  }
+};
+
+window.handleAuthSubmit = function (e, mode) {
+  e.preventDefault();
+  const alertBox = document.getElementById("auth-alert");
+  if (!alertBox) return;
+
+  alertBox.className = "mb-4 p-3 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-2";
+  if (mode === "login") {
+    alertBox.innerHTML = `<span>✓ Connexion réussie ! Redirection en cours...</span>`;
+  } else {
+    alertBox.innerHTML = `<span>✓ Compte créé avec succès ! Bienvenue sur GesFacture. Redirection...</span>`;
+  }
+  alertBox.classList.remove("hidden");
+
+  setTimeout(() => {
+    window.location.href = "login.html";
+  }, 1200);
+};
+
+window.loginDemoUser = function () {
+  const alertBox = document.getElementById("auth-alert");
+  if (alertBox) {
+    alertBox.className = "mb-4 p-3 rounded-xl text-xs font-semibold bg-indigo-50 text-indigo-800 border border-indigo-200 flex items-center gap-2";
+    alertBox.innerHTML = `<span>⚡ Connexion démo activée ! Ouverture de votre espace...</span>`;
+    alertBox.classList.remove("hidden");
+  }
+  setTimeout(() => {
+    window.location.href = "login.html";
+  }, 1000);
+};

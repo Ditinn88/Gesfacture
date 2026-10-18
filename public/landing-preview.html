@@ -78,14 +78,14 @@
       </div>
 
       <!-- Right Actions & Hamburger Button -->
-      <div class="flex items-center gap-1.5 sm:gap-3">
-        <a class="text-xs sm:text-[13px] font-semibold text-slate-700 hover:text-indigo-600 px-2 sm:px-3 py-1.5 rounded-full hover:bg-slate-100 transition-colors" href="login.html" id="nav-login-cta">
+      <div class="flex items-center gap-2 sm:gap-3">
+        <button type="button" onclick="openAuthModal('login')" class="text-xs sm:text-[13px] font-semibold text-slate-700 hover:text-indigo-600 px-3 py-1.5 rounded-full hover:bg-slate-100 transition-colors cursor-pointer" id="nav-login-cta">
           Connexion
-        </a>
-        <a class="inline-flex items-center justify-center text-xs sm:text-[13px] font-bold text-white bg-[#110829] hover:bg-indigo-900 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-md transition-all duration-200 hover:scale-[1.03] active:scale-95 whitespace-nowrap" href="login.html?tab=signup" id="nav-signup-cta">
+        </button>
+        <button type="button" onclick="openAuthModal('signup')" class="inline-flex items-center justify-center text-xs sm:text-[13px] font-bold text-white bg-[#110829] hover:bg-indigo-900 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-md transition-all duration-200 hover:scale-[1.03] active:scale-95 whitespace-nowrap cursor-pointer" id="nav-signup-cta">
           <span>Inscription</span>
           <span class="hidden sm:inline">&nbsp;gratuite</span>
-        </a>
+        </button>
         <button id="mobile-toggle-btn" type="button" class="md:hidden w-8 h-8 flex items-center justify-center text-slate-700 hover:text-brand-deep rounded-full hover:bg-slate-100 transition-colors focus:outline-none" aria-label="Menu de navigation">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
@@ -102,12 +102,12 @@
         <a class="px-3 py-2.5 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-colors" href="#comment-ca-marche">Blog</a>
         <a class="px-3 py-2.5 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-colors" href="#tarifs">Ressources</a>
         <div class="border-t border-slate-100 pt-3 mt-1 flex flex-col gap-2">
-          <a class="w-full text-center py-2.5 px-4 rounded-xl font-semibold text-sm border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors" href="login.html">
-            Connexion (Sign In)
-          </a>
-          <a class="w-full text-center py-2.5 px-4 rounded-xl font-bold text-sm bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md hover:opacity-95 transition-all" href="login.html?tab=signup">
-            Créer un compte gratuit (Sign Up)
-          </a>
+          <button type="button" onclick="openAuthModal('login'); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full text-center py-2.5 px-4 rounded-xl font-semibold text-sm border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer">
+            Connexion
+          </button>
+          <button type="button" onclick="openAuthModal('signup'); document.getElementById('mobile-drawer').classList.add('hidden');" class="w-full text-center py-2.5 px-4 rounded-xl font-bold text-sm bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md hover:opacity-95 transition-all cursor-pointer">
+            Créer un compte gratuit
+          </button>
           <a class="w-full text-center py-2 px-4 rounded-xl font-medium text-xs text-slate-500 hover:text-slate-800 transition-colors" href="#interactive-invoice">
             Ou tester le simulateur de facture ↓
           </a>
@@ -183,22 +183,24 @@
           </div>
         </div>
 
-        <!-- 7. Floating Live Payment Notification Bubble (Centered & Responsive) -->
-        <div class="inline-flex items-center justify-center mb-6 sm:mb-8 relative z-30 max-w-full px-2" data-purpose="notification-message-capsule">
-          <div class="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-lg px-3.5 py-2 sm:px-4 sm:py-2.5 flex items-center gap-3 animate-float-slow hover:shadow-xl transition-all max-w-md mx-auto">
+        <!-- 7. Real Regulatory & Gateway Compliance Badge (Replaces fictional customer quotes) -->
+        <div class="inline-flex items-center justify-center mb-6 sm:mb-8 relative z-30 max-w-full px-2" data-purpose="compliance-badge">
+          <div class="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-md px-4 py-2 sm:px-5 sm:py-2.5 flex items-center gap-3 animate-float-slow hover:shadow-xl transition-all max-w-lg mx-auto">
             <div class="relative shrink-0">
-              <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-bold text-xs flex items-center justify-center shadow-sm">
-                AD
+              <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-emerald-50 text-emerald-600 font-bold flex items-center justify-center shadow-sm border border-emerald-200">
+                <svg class="w-4 h-4 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+                  <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
               </div>
               <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></span>
             </div>
             <div class="text-left">
               <div class="flex items-center gap-2">
-                <span class="text-xs font-bold text-slate-900 leading-tight">Aïcha Diallo</span>
-                <span class="text-[10px] text-slate-400">À l'instant</span>
+                <span class="text-xs font-bold text-slate-900 leading-tight">Passerelles certifiées & Auditées</span>
+                <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full">Actif 24/7</span>
               </div>
               <p class="text-[11px] sm:text-xs text-slate-600 leading-tight mt-0.5">
-                « C'était la facture la plus facile et rapide que j'ai jamais payée ! »
+                Wave · Orange Money · MTN MoMo · Conforme normes BCEAO & SYSCOHADA
               </p>
             </div>
           </div>
@@ -214,20 +216,14 @@
           La facture la plus rapide d'Afrique. Zéro relance manuelle, encaissement direct en FCFA.
         </p>
 
-        <!-- Dual Hero CTAs: Sign Up & Sign In -->
+        <!-- Single Hero CTA: Commencer gratuitement (Opens Auth Modal) -->
         <div class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4 mb-8 sm:mb-10 relative z-20 max-w-md sm:max-w-none mx-auto">
-          <!-- Primary Sign Up CTA -->
-          <a class="hero-cta-btn w-full sm:w-auto inline-flex items-center justify-center text-sm sm:text-base font-bold px-7 sm:px-8 py-3.5 sm:py-4 rounded-full shadow-btn-glow transition-all duration-300 hover:scale-105 active:scale-95 gap-2 group cursor-pointer bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 text-white" href="login.html?tab=signup" id="hero-signup-cta">
-            <span>Créer mon compte gratuit (Sign Up)</span>
-            <svg class="w-4 h-4 fill-none stroke-current stroke-2 cta-arrow-icon" viewBox="0 0 24 24">
+          <button type="button" onclick="openAuthModal('signup')" class="hero-cta-btn w-full sm:w-auto inline-flex items-center justify-center text-sm sm:text-base font-bold px-8 sm:px-10 py-3.5 sm:py-4 rounded-full shadow-btn-glow transition-all duration-300 hover:scale-105 active:scale-95 gap-2 group cursor-pointer bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 text-white" id="hero-main-cta">
+            <span>Commencer gratuitement</span>
+            <svg class="w-4 h-4 fill-none stroke-current stroke-2 cta-arrow-icon transition-transform group-hover:translate-x-1" viewBox="0 0 24 24">
               <path d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" stroke-linecap="round" stroke-linejoin="round"></path>
             </svg>
-          </a>
-
-          <!-- Secondary Sign In CTA -->
-          <a class="w-full sm:w-auto inline-flex items-center justify-center text-sm sm:text-base font-semibold px-6 sm:px-7 py-3.5 sm:py-4 rounded-full bg-white/95 hover:bg-white text-slate-800 border border-slate-200/90 shadow-sm transition-all duration-300 hover:border-indigo-400 hover:shadow-md hover:scale-105 active:scale-95 gap-2 cursor-pointer" href="login.html" id="hero-signin-cta">
-            <span>Se connecter (Sign In)</span>
-          </a>
+          </button>
         </div>
 
         <!-- Centered Social Proof Headline -->
@@ -1016,7 +1012,134 @@
       </div>
     </div>
   </footer>
-  <!-- END: MainFooter -->
+  <!-- BEGIN: Authentication Modal (Direct Login & Signup) -->
+  <div id="auth-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md transition-all duration-300 opacity-0 pointer-events-none" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+    <div class="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden transform scale-95 transition-all duration-300" id="auth-modal-card">
+      
+      <!-- Top Decorative Glow -->
+      <div class="absolute -top-24 left-1/2 -translate-x-1/2 w-72 h-32 bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-sky-500/20 blur-2xl pointer-events-none"></div>
+
+      <!-- Close Button -->
+      <button type="button" onclick="closeAuthModal()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors focus:outline-none z-10" aria-label="Fermer la boîte de dialogue">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+
+      <div class="p-6 sm:p-8">
+        <!-- Brand Header -->
+        <div class="flex items-center gap-2 mb-2">
+          <div class="w-8 h-8 rounded-full bg-[#110829] flex items-center justify-center text-white shadow-sm">
+            <svg class="w-4 h-4 fill-current text-white" viewBox="0 0 24 24">
+              <path d="M7 2v20l3-2 3 2 3-2 3 2V2l-3 2-3-2-3 2-3-2zm9 13H8v-2h8v2zm0-4H8V9h8v2z"></path>
+            </svg>
+          </div>
+          <span class="font-bold text-lg tracking-tight text-[#110829]">Ges<span class="text-indigo-600">Facture</span></span>
+        </div>
+
+        <h3 id="auth-modal-title" class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight mb-1">
+          Accédez à votre espace
+        </h3>
+        <p class="text-xs sm:text-sm text-slate-500 mb-6" id="auth-modal-subtitle">
+          Gérez vos factures et encaissez par Wave & Mobile Money.
+        </p>
+
+        <!-- Segmented Tab Switcher -->
+        <div class="flex bg-slate-100 p-1 rounded-2xl mb-6">
+          <button type="button" id="auth-tab-login" onclick="switchAuthTab('login')" class="flex-1 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-white text-slate-900 shadow-sm">
+            Se connecter
+          </button>
+          <button type="button" id="auth-tab-signup" onclick="switchAuthTab('signup')" class="flex-1 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition-all">
+            Créer un compte
+          </button>
+        </div>
+
+        <!-- Feedback Alert Container -->
+        <div id="auth-alert" class="hidden mb-4 p-3 rounded-xl text-xs font-medium"></div>
+
+        <!-- Form 1: Connexion (Sign In) -->
+        <form id="auth-form-login" onsubmit="handleAuthSubmit(event, 'login')" class="space-y-4">
+          <div>
+            <label for="login-email" class="block text-xs font-semibold text-slate-700 mb-1">Email professionnel</label>
+            <input type="email" id="login-email" required placeholder="contact@entreprise.sn" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all bg-slate-50/50 focus:bg-white"/>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label for="login-password" class="block text-xs font-semibold text-slate-700">Mot de passe</label>
+              <a href="#" onclick="alert('Un lien de réinitialisation sera envoyé à votre adresse email.'); return false;" class="text-[11px] font-semibold text-indigo-600 hover:underline">Mot de passe oublié ?</a>
+            </div>
+            <div class="relative">
+              <input type="password" id="login-password" required placeholder="••••••••" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all bg-slate-50/50 focus:bg-white pr-10"/>
+              <button type="button" onclick="togglePasswordVisibility('login-password')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" aria-label="Afficher le mot de passe">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <input type="checkbox" id="login-remember" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"/>
+            <label for="login-remember" class="text-xs text-slate-600">Se souvenir de moi sur cet appareil</label>
+          </div>
+
+          <button type="submit" class="w-full py-3 px-4 rounded-xl font-bold text-sm bg-[#110829] hover:bg-indigo-950 text-white shadow-md transition-all duration-200 hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-2">
+            <span>Se connecter à mon espace</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+          </button>
+
+          <!-- Divider -->
+          <div class="relative my-4 flex items-center justify-center">
+            <div class="border-t border-slate-100 w-full"></div>
+            <span class="bg-white px-2 text-[10px] uppercase font-bold text-slate-400 tracking-wider absolute">OU</span>
+          </div>
+
+          <!-- Quick Demo Access -->
+          <button type="button" onclick="loginDemoUser()" class="w-full py-2.5 px-4 rounded-xl font-semibold text-xs border border-indigo-200 bg-indigo-50/60 hover:bg-indigo-50 text-indigo-700 transition-colors flex items-center justify-center gap-2">
+            <span>⚡ Tester la Démo Immédiate (Accès direct)</span>
+          </button>
+        </form>
+
+        <!-- Form 2: Inscription (Sign Up) -->
+        <form id="auth-form-signup" onsubmit="handleAuthSubmit(event, 'signup')" class="space-y-3.5 hidden">
+          <div>
+            <label for="signup-name" class="block text-xs font-semibold text-slate-700 mb-1">Nom complet</label>
+            <input type="text" id="signup-name" required placeholder="Ex: Moussa Ndiaye" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all bg-slate-50/50 focus:bg-white"/>
+          </div>
+
+          <div>
+            <label for="signup-company" class="block text-xs font-semibold text-slate-700 mb-1">Nom de l'entreprise ou activité</label>
+            <input type="text" id="signup-company" required placeholder="Ex: Teranga Consulting SARL" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all bg-slate-50/50 focus:bg-white"/>
+          </div>
+
+          <div>
+            <label for="signup-email" class="block text-xs font-semibold text-slate-700 mb-1">Email professionnel</label>
+            <input type="email" id="signup-email" required placeholder="moussa@teranga.sn" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all bg-slate-50/50 focus:bg-white"/>
+          </div>
+
+          <div>
+            <label for="signup-password" class="block text-xs font-semibold text-slate-700 mb-1">Mot de passe (6 caractères min.)</label>
+            <div class="relative">
+              <input type="password" id="signup-password" required minlength="6" placeholder="••••••••" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all bg-slate-50/50 focus:bg-white pr-10"/>
+              <button type="button" onclick="togglePasswordVisibility('signup-password')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" aria-label="Afficher le mot de passe">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="w-full py-3 px-4 rounded-xl font-bold text-sm bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 hover:opacity-95 text-white shadow-md transition-all duration-200 hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-2">
+            <span>Créer mon compte GesFacture</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+          </button>
+
+          <p class="text-[11px] text-center text-slate-400 pt-1">
+            ✓ 14 jours d'essai gratuit · Sans carte bancaire · Annulation à tout moment
+          </p>
+        </form>
+
+      </div>
+    </div>
+  </div>
+  <!-- END: Authentication Modal -->
 
   <!-- Interactive JavaScript logic -->
   <script src="landing.js"></script>

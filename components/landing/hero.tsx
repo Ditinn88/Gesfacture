@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/lib/auth-context";
 
 interface Ripple {
   x: number;
@@ -10,9 +11,10 @@ interface Ripple {
 }
 
 export function LandingHero() {
+  const { openAuthModal } = useAuth();
   const [ripples, setRipples] = useState<Ripple[]>([]);
 
-  const handleCtaClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleCtaClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -143,31 +145,19 @@ export function LandingHero() {
           </div>
         </div>
 
-        {/* 7. Floating Live Payment Notification Bubble */}
+        {/* Real Live Platform Security Status Badge */}
         <div
           className="inline-flex items-center justify-center mb-6 sm:mb-8 relative z-30 px-2"
-          data-purpose="notification-message-capsule"
+          data-purpose="security-status-badge"
         >
-          <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-lg px-3.5 py-2 sm:px-4 sm:py-2.5 flex items-center gap-3 animate-float-slow hover:shadow-xl transition-all max-w-md mx-auto">
-            {/* Avatar with micro badge */}
-            <div className="relative shrink-0">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-bold text-xs flex items-center justify-center shadow-sm">
-                AD
-              </div>
-              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></span>
-            </div>
-            {/* Sender & Message text */}
-            <div className="text-left">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-900 leading-tight">
-                  Aïcha Diallo
-                </span>
-                <span className="text-[10px] text-slate-400 font-medium">À l'instant</span>
-              </div>
-              <p className="text-[11px] sm:text-xs text-slate-600 leading-tight mt-0.5">
-                « C'était la facture la plus facile et rapide que j'ai jamais payée ! »
-              </p>
-            </div>
+          <div className="bg-white/95 backdrop-blur-md rounded-full border border-slate-200/90 shadow-sm px-4 py-1.5 flex items-center gap-2.5 hover:shadow-md transition-all">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className="text-xs font-semibold text-slate-800">
+              Passerelles de paiement Wave & Mobile Money certifiées
+            </span>
+            <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+              BCEAO / OHADA
+            </span>
           </div>
         </div>
 
@@ -181,14 +171,16 @@ export function LandingHero() {
           La facture la plus rapide d'Afrique. Zéro relance manuelle, encaissement direct en FCFA.
         </p>
 
-        {/* Dual Hero CTAs: Sign Up & Sign In */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4 mb-8 sm:mb-10 relative z-20 max-w-md sm:max-w-none mx-auto">
-          {/* Primary Sign Up CTA */}
-          <Link
-            href="/login?tab=signup"
-            onClick={handleCtaClick}
-            className="hero-cta-btn w-full sm:w-auto inline-flex items-center justify-center text-sm sm:text-base font-bold px-7 sm:px-8 py-3.5 sm:py-4 rounded-full shadow-btn-glow transition-all duration-300 hover:scale-105 active:scale-95 gap-2 group cursor-pointer bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 text-white"
-            id="hero-signup-cta"
+        {/* Single Responsive Hero CTA Button (Opens Auth Modal directly) */}
+        <div className="flex items-center justify-center px-4 mb-8 sm:mb-10 relative z-20">
+          <button
+            type="button"
+            onClick={(e) => {
+              handleCtaClick(e);
+              openAuthModal("signup");
+            }}
+            className="hero-cta-btn w-full sm:w-auto inline-flex items-center justify-center text-sm sm:text-base font-bold px-8 sm:px-10 py-3.5 sm:py-4 rounded-full max-w-xs sm:max-w-none shadow-btn-glow transition-all duration-300 hover:scale-105 active:scale-95 gap-2 group cursor-pointer bg-[#110829] hover:bg-indigo-950 text-white"
+            id="hero-main-cta"
           >
             {/* Dynamic click ripples */}
             {ripples.map((ripple) => (
@@ -204,7 +196,7 @@ export function LandingHero() {
               />
             ))}
 
-            <span>Créer mon compte gratuit (Sign Up)</span>
+            <span>Commencer gratuitement</span>
             <svg
               className="w-4 h-4 fill-none stroke-current stroke-2 cta-arrow-icon"
               viewBox="0 0 24 24"
@@ -215,16 +207,7 @@ export function LandingHero() {
                 strokeLinejoin="round"
               />
             </svg>
-          </Link>
-
-          {/* Secondary Sign In CTA */}
-          <Link
-            href="/login"
-            className="w-full sm:w-auto inline-flex items-center justify-center text-sm sm:text-base font-semibold px-6 sm:px-7 py-3.5 sm:py-4 rounded-full bg-white/95 hover:bg-white text-slate-800 border border-slate-200/90 shadow-sm transition-all duration-300 hover:border-indigo-400 hover:shadow-md hover:scale-105 active:scale-95 gap-2 cursor-pointer"
-            id="hero-signin-cta"
-          >
-            <span>Se connecter (Sign In)</span>
-          </Link>
+          </button>
         </div>
 
         {/* Centered Social Proof Headline */}

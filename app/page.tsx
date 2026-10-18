@@ -13,10 +13,14 @@ import { Testimonials } from "@/components/landing/testimonials";
 import { Pricing } from "@/components/landing/pricing";
 import { FinalCTA } from "@/components/landing/final-cta";
 import { LandingFooter } from "@/components/landing/footer";
+import { AuthModal } from "@/components/auth/auth-modal";
 
 export default function LandingPage() {
   return (
     <div className="bg-brand-surface text-brand-navy antialiased font-sans selection:bg-brand-deep selection:text-white relative overflow-x-hidden min-h-screen">
+      
+      {/* Auth Modal for Login / Signup */}
+      <AuthModal />
       
       {/* Decorative Hero Background Elements */}
       <div

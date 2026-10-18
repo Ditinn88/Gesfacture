@@ -19,6 +19,7 @@ import { useAuth } from "@/lib/auth-context";
 export function AuthModal() {
   const {
     isAuthModalOpen,
+    authModalTab,
     openAuthModal,
     closeAuthModal,
     signInWithEmail,
@@ -28,7 +29,7 @@ export function AuthModal() {
     loginAsDemo,
   } = useAuth();
 
-  const [mode, setMode] = useState<"login" | "signup" | "forgot" | "reset">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "forgot" | "reset">(authModalTab || "login");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,6 +39,12 @@ export function AuthModal() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  React.useEffect(() => {
+    if (authModalTab) {
+      setMode(authModalTab);
+    }
+  }, [authModalTab]);
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
