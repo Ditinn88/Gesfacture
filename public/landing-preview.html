@@ -1027,15 +1027,15 @@
       </button>
 
       <div class="p-6 sm:p-8">
-        <!-- Brand Header -->
-        <div class="flex items-center gap-2 mb-2">
-          <div class="w-8 h-8 rounded-full bg-[#110829] flex items-center justify-center text-white shadow-sm">
+        <!-- Brand Header (Clickable: returns to landing page & closes modal) -->
+        <a href="index.html" onclick="closeAuthModal()" class="inline-flex items-center gap-2 mb-2 group cursor-pointer focus:outline-none" title="Retour à la page d'accueil GesFacture">
+          <div class="w-8 h-8 rounded-full bg-[#110829] flex items-center justify-center text-white shadow-sm transition-transform duration-200 group-hover:scale-105">
             <svg class="w-4 h-4 fill-current text-white" viewBox="0 0 24 24">
               <path d="M7 2v20l3-2 3 2 3-2 3 2V2l-3 2-3-2-3 2-3-2zm9 13H8v-2h8v2zm0-4H8V9h8v2z"></path>
             </svg>
           </div>
-          <span class="font-bold text-lg tracking-tight text-[#110829]">Ges<span class="text-indigo-600">Facture</span></span>
-        </div>
+          <span class="font-bold text-lg tracking-tight text-[#110829] group-hover:text-indigo-600 transition-colors">Ges<span class="text-indigo-600">Facture</span></span>
+        </a>
 
         <h3 id="auth-modal-title" class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight mb-1">
           Accédez à votre espace

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import {
   X,
   Loader2,
@@ -188,11 +189,23 @@ export function AuthModal() {
           <X className="w-4 h-4 stroke-[2]" />
         </button>
 
-        {/* Brand Header */}
-        <div className="space-y-1 pt-1">
-          <h2 className="text-2xl font-bold text-neutral-900 dark:text-white tracking-tight font-sans">
-            GESFACTURE
-          </h2>
+        {/* Brand Header (Clickable Logo: closes modal and returns to landing page) */}
+        <div className="space-y-1 pt-1 flex flex-col items-center">
+          <Link
+            href="/"
+            onClick={closeAuthModal}
+            className="inline-flex items-center gap-2 group cursor-pointer focus:outline-none transition-transform hover:scale-105"
+            title="Retour à la page d'accueil GesFacture"
+          >
+            <div className="w-8 h-8 rounded-full bg-[#110829] dark:bg-white flex items-center justify-center text-white dark:text-[#110829] shadow-sm transition-transform duration-200 group-hover:scale-105">
+              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                <path d="M7 2v20l3-2 3 2 3-2 3 2V2l-3 2-3-2-3 2-3-2zm9 13H8v-2h8v2zm0-4H8V9h8v2z" />
+              </svg>
+            </div>
+            <span className="text-xl sm:text-2xl font-extrabold text-neutral-900 dark:text-white tracking-tight font-sans group-hover:text-indigo-600 transition-colors">
+              Ges<span className="text-indigo-600">Facture</span>
+            </span>
+          </Link>
           <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400">
             {mode === "forgot"
               ? "Récupérez l'accès à votre compte."
