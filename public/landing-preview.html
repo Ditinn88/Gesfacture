@@ -61,7 +61,7 @@
       
       <!-- Left Logo & Navigation Links -->
       <div class="flex items-center gap-5 sm:gap-7">
-        <a aria-label="GesFacture Accueil" class="flex items-center gap-2 group mr-1 focus:outline-none" href="#">
+        <a aria-label="GesFacture Accueil" class="flex items-center gap-2 group mr-1 focus:outline-none" href="index.html">
           <div class="w-8 h-8 rounded-full bg-[#110829] flex items-center justify-center text-white shadow-sm transition-transform duration-300 group-hover:scale-105">
             <svg class="w-4 h-4 fill-current text-white" viewBox="0 0 24 24">
               <path d="M7 2v20l3-2 3 2 3-2 3 2V2l-3 2-3-2-3 2-3-2zm9 13H8v-2h8v2zm0-4H8V9h8v2z"></path>
@@ -78,12 +78,13 @@
       </div>
 
       <!-- Right Actions & Hamburger Button -->
-      <div class="flex items-center gap-2 sm:gap-4">
-        <a class="text-xs sm:text-[13px] font-semibold text-slate-700 hover:text-brand-deep px-2 py-1.5 transition-colors" href="login.html">
+      <div class="flex items-center gap-1.5 sm:gap-3">
+        <a class="text-xs sm:text-[13px] font-semibold text-slate-700 hover:text-indigo-600 px-2 sm:px-3 py-1.5 rounded-full hover:bg-slate-100 transition-colors" href="login.html" id="nav-login-cta">
           Connexion
         </a>
-        <a class="inline-flex items-center justify-center text-xs sm:text-[13px] font-medium text-white bg-[#110829] hover:bg-[#1f1042] px-4 sm:px-6 py-2 sm:py-2.5 rounded-full shadow-md transition-all duration-200 hover:scale-[1.02] active:scale-95 whitespace-nowrap" href="#interactive-invoice">
-          Générer une facture
+        <a class="inline-flex items-center justify-center text-xs sm:text-[13px] font-bold text-white bg-[#110829] hover:bg-indigo-900 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-md transition-all duration-200 hover:scale-[1.03] active:scale-95 whitespace-nowrap" href="login.html?tab=signup" id="nav-signup-cta">
+          <span>Inscription</span>
+          <span class="hidden sm:inline">&nbsp;gratuite</span>
         </a>
         <button id="mobile-toggle-btn" type="button" class="md:hidden w-8 h-8 flex items-center justify-center text-slate-700 hover:text-brand-deep rounded-full hover:bg-slate-100 transition-colors focus:outline-none" aria-label="Menu de navigation">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -101,8 +102,15 @@
         <a class="px-3 py-2.5 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-colors" href="#comment-ca-marche">Blog</a>
         <a class="px-3 py-2.5 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-colors" href="#tarifs">Ressources</a>
         <div class="border-t border-slate-100 pt-3 mt-1 flex flex-col gap-2">
-          <a class="w-full text-center py-2.5 px-4 rounded-xl font-semibold text-sm border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors" href="login.html">Connexion à mon compte</a>
-          <a class="w-full text-center py-2.5 px-4 rounded-xl font-bold text-sm bg-[#110829] text-white shadow-md hover:bg-[#1f1042] transition-colors" href="#interactive-invoice">Créer une facture maintenant</a>
+          <a class="w-full text-center py-2.5 px-4 rounded-xl font-semibold text-sm border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors" href="login.html">
+            Connexion (Sign In)
+          </a>
+          <a class="w-full text-center py-2.5 px-4 rounded-xl font-bold text-sm bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md hover:opacity-95 transition-all" href="login.html?tab=signup">
+            Créer un compte gratuit (Sign Up)
+          </a>
+          <a class="w-full text-center py-2 px-4 rounded-xl font-medium text-xs text-slate-500 hover:text-slate-800 transition-colors" href="#interactive-invoice">
+            Ou tester le simulateur de facture ↓
+          </a>
         </div>
       </div>
     </div>
@@ -206,13 +214,19 @@
           La facture la plus rapide d'Afrique. Zéro relance manuelle, encaissement direct en FCFA.
         </p>
 
-        <!-- Main Hero CTA Button (Responsive Size & Touch Target) -->
-        <div class="flex items-center justify-center px-4 mb-8 sm:mb-10 relative z-20">
-          <a class="hero-cta-btn w-full sm:w-auto inline-flex items-center justify-center text-sm sm:text-base font-semibold px-7 sm:px-8 py-3.5 sm:py-4 rounded-full max-w-xs sm:max-w-none shadow-btn-glow transition-all duration-300 hover:scale-105 active:scale-95 gap-2 group cursor-pointer" href="#interactive-invoice" id="hero-main-cta">
-            <span>Commencer gratuitement</span>
+        <!-- Dual Hero CTAs: Sign Up & Sign In -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4 mb-8 sm:mb-10 relative z-20 max-w-md sm:max-w-none mx-auto">
+          <!-- Primary Sign Up CTA -->
+          <a class="hero-cta-btn w-full sm:w-auto inline-flex items-center justify-center text-sm sm:text-base font-bold px-7 sm:px-8 py-3.5 sm:py-4 rounded-full shadow-btn-glow transition-all duration-300 hover:scale-105 active:scale-95 gap-2 group cursor-pointer bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 text-white" href="login.html?tab=signup" id="hero-signup-cta">
+            <span>Créer mon compte gratuit (Sign Up)</span>
             <svg class="w-4 h-4 fill-none stroke-current stroke-2 cta-arrow-icon" viewBox="0 0 24 24">
               <path d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" stroke-linecap="round" stroke-linejoin="round"></path>
             </svg>
+          </a>
+
+          <!-- Secondary Sign In CTA -->
+          <a class="w-full sm:w-auto inline-flex items-center justify-center text-sm sm:text-base font-semibold px-6 sm:px-7 py-3.5 sm:py-4 rounded-full bg-white/95 hover:bg-white text-slate-800 border border-slate-200/90 shadow-sm transition-all duration-300 hover:border-indigo-400 hover:shadow-md hover:scale-105 active:scale-95 gap-2 cursor-pointer" href="login.html" id="hero-signin-cta">
+            <span>Se connecter (Sign In)</span>
           </a>
         </div>
 
@@ -326,18 +340,18 @@
         <div class="mt-8 text-left max-w-4xl mx-auto bg-white rounded-3xl border border-slate-200/90 shadow-2xl p-6 sm:p-10 relative overflow-hidden" data-purpose="interactive-dashboard-mockup" id="interactive-invoice">
           <!-- Mockup Header Controls -->
           <div class="flex flex-wrap items-center justify-between border-b border-slate-100 pb-6 gap-4">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-brand-deep text-white flex items-center justify-center font-bold text-lg">
+            <a href="index.html" class="flex items-center gap-3 group cursor-pointer" title="Retour à l'accueil GesFacture">
+              <div class="w-10 h-10 rounded-xl bg-brand-deep text-white flex items-center justify-center font-bold text-lg group-hover:scale-105 transition-transform shadow-sm">
                 GF
               </div>
               <div>
                 <div class="flex items-center gap-2">
-                  <h3 class="font-bold text-slate-900 text-lg">FACTURE N° 2026-084</h3>
+                  <h3 class="font-bold text-slate-900 text-lg group-hover:text-indigo-600 transition-colors">FACTURE N° 2026-084</h3>
                   <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">Prête à envoyer</span>
                 </div>
                 <p class="text-xs text-slate-500">Émise aujourd'hui • Échéance: à réception</p>
               </div>
-            </div>
+            </a>
             
             <!-- Currency Toggle -->
             <div class="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-semibold text-slate-600">

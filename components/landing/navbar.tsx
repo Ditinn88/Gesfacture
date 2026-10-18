@@ -72,30 +72,34 @@ export function LandingNavbar() {
         </div>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-1.5 sm:gap-3">
           {user ? (
             <Link
               href="/dashboard"
-              className="text-xs sm:text-[13px] font-semibold text-slate-700 hover:text-brand-deep px-2 py-1.5 transition-colors flex items-center gap-1.5"
+              className="text-xs sm:text-[13px] font-semibold text-slate-700 hover:text-indigo-600 px-3 py-1.5 transition-colors flex items-center gap-1.5"
             >
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               <span>Tableau de bord</span>
             </Link>
           ) : (
-            <Link
-              href="/login"
-              className="text-xs sm:text-[13px] font-semibold text-slate-700 hover:text-brand-deep px-2 py-1.5 transition-colors"
-            >
-              Connexion
-            </Link>
+            <>
+              <Link
+                href="/login"
+                className="text-xs sm:text-[13px] font-semibold text-slate-700 hover:text-indigo-600 px-2 sm:px-3 py-1.5 rounded-full hover:bg-slate-100 transition-colors"
+                id="nav-signin-cta"
+              >
+                Connexion
+              </Link>
+              <Link
+                href="/login?tab=signup"
+                className="inline-flex items-center justify-center text-xs sm:text-[13px] font-bold text-white bg-[#110829] hover:bg-indigo-900 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-md transition-all duration-200 hover:scale-[1.03] active:scale-95 whitespace-nowrap"
+                id="nav-signup-cta"
+              >
+                <span>Inscription</span>
+                <span className="hidden sm:inline">&nbsp;gratuite</span>
+              </Link>
+            </>
           )}
-
-          <Link
-            href={user ? "/invoices/new" : "#interactive-invoice"}
-            className="inline-flex items-center justify-center text-xs sm:text-[13px] font-medium text-white bg-[#110829] hover:bg-[#1f1042] px-4 sm:px-6 py-2 sm:py-2.5 rounded-full shadow-md transition-all duration-200 hover:scale-[1.02] active:scale-95 whitespace-nowrap"
-          >
-            Générer une facture
-          </Link>
 
           {/* Mobile Hamburger Button */}
           <button
@@ -156,21 +160,30 @@ export function LandingNavbar() {
                   Accéder au Tableau de bord
                 </Link>
               ) : (
-                <Link
-                  href="/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-full text-center py-2.5 px-4 rounded-xl font-semibold text-sm border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
-                >
-                  Connexion à mon compte
-                </Link>
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full text-center py-2.5 px-4 rounded-xl font-semibold text-sm border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+                  >
+                    Connexion (Sign In)
+                  </Link>
+                  <Link
+                    href="/login?tab=signup"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full text-center py-2.5 px-4 rounded-xl font-bold text-sm bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md hover:opacity-95 transition-all"
+                  >
+                    Créer un compte gratuit (Sign Up)
+                  </Link>
+                </>
               )}
 
               <Link
                 href="/invoices/new"
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-full text-center py-2.5 px-4 rounded-xl font-bold text-sm bg-[#110829] text-white shadow-md hover:bg-[#1f1042] transition-colors"
+                className="w-full text-center py-2 px-4 rounded-xl font-medium text-xs text-slate-500 hover:text-slate-800 transition-colors"
               >
-                Créer une facture maintenant
+                Ou créer une facture directement →
               </Link>
             </div>
           </div>

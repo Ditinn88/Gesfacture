@@ -353,6 +353,10 @@ function CreateInvoiceContent() {
           </Link>
           <div>
             <div className="flex items-center gap-2 text-xs text-neutral-400">
+              <Link href="/" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors font-medium">
+                Accueil
+              </Link>
+              <span>/</span>
               <Link href="/invoices" className="hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">
                 Factures
               </Link>

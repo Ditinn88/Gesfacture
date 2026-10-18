@@ -181,13 +181,14 @@ export function LandingHero() {
           La facture la plus rapide d'Afrique. Zéro relance manuelle, encaissement direct en FCFA.
         </p>
 
-        {/* Main Hero CTA Button (Responsive Size & Touch Target) */}
-        <div className="flex items-center justify-center px-4 mb-8 sm:mb-10 relative z-20">
+        {/* Dual Hero CTAs: Sign Up & Sign In */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4 mb-8 sm:mb-10 relative z-20 max-w-md sm:max-w-none mx-auto">
+          {/* Primary Sign Up CTA */}
           <Link
-            href="#interactive-invoice"
+            href="/login?tab=signup"
             onClick={handleCtaClick}
-            className="hero-cta-btn w-full sm:w-auto inline-flex items-center justify-center text-sm sm:text-base font-semibold px-7 sm:px-8 py-3.5 sm:py-4 rounded-full max-w-xs sm:max-w-none shadow-btn-glow transition-all duration-300 hover:scale-105 active:scale-95 gap-2 group cursor-pointer"
-            id="hero-main-cta"
+            className="hero-cta-btn w-full sm:w-auto inline-flex items-center justify-center text-sm sm:text-base font-bold px-7 sm:px-8 py-3.5 sm:py-4 rounded-full shadow-btn-glow transition-all duration-300 hover:scale-105 active:scale-95 gap-2 group cursor-pointer bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 text-white"
+            id="hero-signup-cta"
           >
             {/* Dynamic click ripples */}
             {ripples.map((ripple) => (
@@ -203,7 +204,7 @@ export function LandingHero() {
               />
             ))}
 
-            <span>Commencer gratuitement</span>
+            <span>Créer mon compte gratuit (Sign Up)</span>
             <svg
               className="w-4 h-4 fill-none stroke-current stroke-2 cta-arrow-icon"
               viewBox="0 0 24 24"
@@ -214,6 +215,15 @@ export function LandingHero() {
                 strokeLinejoin="round"
               />
             </svg>
+          </Link>
+
+          {/* Secondary Sign In CTA */}
+          <Link
+            href="/login"
+            className="w-full sm:w-auto inline-flex items-center justify-center text-sm sm:text-base font-semibold px-6 sm:px-7 py-3.5 sm:py-4 rounded-full bg-white/95 hover:bg-white text-slate-800 border border-slate-200/90 shadow-sm transition-all duration-300 hover:border-indigo-400 hover:shadow-md hover:scale-105 active:scale-95 gap-2 cursor-pointer"
+            id="hero-signin-cta"
+          >
+            <span>Se connecter (Sign In)</span>
           </Link>
         </div>
 

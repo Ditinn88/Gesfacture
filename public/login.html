@@ -267,6 +267,15 @@
     forgotLinkBtn.addEventListener('click', () => setMode('forgot'));
     backToLoginBtn.addEventListener('click', () => setMode('login'));
 
+    // Check URL parameters on load (e.g., login.html?tab=signup)
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialTab = urlParams.get('tab');
+    if (initialTab === 'signup') {
+      setMode('signup');
+    } else if (initialTab === 'forgot') {
+      setMode('forgot');
+    }
+
     function togglePasswordVisibility(inputId) {
       const input = document.getElementById(inputId);
       if (input.type === 'password') {
