@@ -120,6 +120,59 @@
 }
 
 /* ==========================================================================
+   LANDING PAGE ANIMATIONS & DECORATIONS
+   ========================================================================== */
+@keyframes floatGentle {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(1.5deg); }
+}
+@keyframes floatReverse {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(8px) rotate(-2deg); }
+}
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.05); }
+}
+.animate-float-1 {
+  animation: floatGentle 5s ease-in-out infinite;
+}
+.animate-float-2 {
+  animation: floatReverse 6s ease-in-out infinite;
+}
+.animate-pulse-glow {
+  animation: pulseGlow 7s ease-in-out infinite;
+}
+
+.binder-clip {
+  position: relative;
+  width: 44px;
+  height: 48px;
+  background: #D9381E;
+  border-radius: 4px;
+  box-shadow: 0 16px 28px -6px rgba(217, 56, 30, 0.45), 0 6px 12px -3px rgba(0,0,0,0.2);
+}
+.binder-clip::before {
+  content: '';
+  position: absolute;
+  top: -14px;
+  left: 10px;
+  width: 24px;
+  height: 22px;
+  border: 3.5px solid #CBD5E1;
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+}
+.paper-clip {
+  width: 14px;
+  height: 44px;
+  border: 3.5px solid #94A3B8;
+  border-radius: 12px;
+  transform: rotate(28deg);
+  box-shadow: 2px 8px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* ==========================================================================
    PRINT MEDIA STYLES - Clean Official A4 Invoice Printing
    ========================================================================== */
 @media print {
