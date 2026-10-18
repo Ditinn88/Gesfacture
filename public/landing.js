@@ -54,6 +54,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const displayTotal = document.getElementById("display-total");
 
   let currentCurrency = "FCFA";
+  const currencyPrices = {
+    FCFA: { p1: 350000, p2: 150000, step: 5000, sym: "FCFA" },
+    EUR: { p1: 535, p2: 230, step: 10, sym: "€" },
+    USD: { p1: 580, p2: 250, step: 10, sym: "$" },
+  };
 
   function formatNumber(num) {
     return new Intl.NumberFormat("fr-FR").format(Math.round(num));
@@ -61,22 +66,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateCalculations() {
     const q1 = parseFloat(qty1 ? qty1.value : 1) || 0;
-    const p1 = parseFloat(price1 ? price1.value : 350000) || 0;
+    const p1 = parseFloat(price1 ? price1.value : (currencyPrices[currentCurrency]?.p1 || 350000)) || 0;
     const totalRow1 = q1 * p1;
-    if (rowTotal1) rowTotal1.textContent = `${formatNumber(totalRow1)} ${currentCurrency}`;
+    if (rowTotal1) rowTotal1.textContent = `${formatNumber(totalRow1)} ${currencyPrices[currentCurrency]?.sym || currentCurrency}`;
 
     const q2 = parseFloat(qty2 ? qty2.value : 2) || 0;
-    const p2 = parseFloat(price2 ? price2.value : 150000) || 0;
+    const p2 = parseFloat(price2 ? price2.value : (currencyPrices[currentCurrency]?.p2 || 150000)) || 0;
     const totalRow2 = q2 * p2;
-    if (rowTotal2) rowTotal2.textContent = `${formatNumber(totalRow2)} ${currentCurrency}`;
+    if (rowTotal2) rowTotal2.textContent = `${formatNumber(totalRow2)} ${currencyPrices[currentCurrency]?.sym || currentCurrency}`;
 
     const subtotal = totalRow1 + totalRow2;
-    const tva = subtotal * 0.18; // 18% standard VAT
+    const tva = Math.round(subtotal * 0.18); // 18% standard VAT
     const totalTTC = subtotal + tva;
 
-    if (displaySubtotal) displaySubtotal.textContent = `${formatNumber(subtotal)} ${currentCurrency}`;
-    if (displayTva) displayTva.textContent = `${formatNumber(tva)} ${currentCurrency}`;
-    if (displayTotal) displayTotal.textContent = `${formatNumber(totalTTC)} ${currentCurrency}`;
+    const sym = currencyPrices[currentCurrency]?.sym || currentCurrency;
+    if (displaySubtotal) displaySubtotal.textContent = `${formatNumber(subtotal)} ${sym}`;
+    if (displayTva) displayTva.textContent = `${formatNumber(tva)} ${sym}`;
+    if (displayTotal) displayTotal.textContent = `${formatNumber(totalTTC)} ${sym}`;
   }
 
   if (qty1 && price1 && qty2 && price2) {
@@ -85,7 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Currency Switcher buttons
+  // Currency Switcher buttons with realistic price updates
   const currencyButtons = document.querySelectorAll(".currency-toggle-btn");
   currencyButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -97,6 +103,21 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.classList.remove("text-slate-500");
 
       currentCurrency = btn.getAttribute("data-curr") || "FCFA";
+      const config = currencyPrices[currentCurrency] || currencyPrices.FCFA;
+
+      if (price1) {
+        price1.value = config.p1;
+        price1.step = config.step;
+      }
+      if (price2) {
+        price2.value = config.p2;
+        price2.step = config.step;
+      }
+
+      document.querySelectorAll(".curr-label").forEach((el) => {
+        el.textContent = config.sym;
+      });
+
       updateCalculations();
     });
   });

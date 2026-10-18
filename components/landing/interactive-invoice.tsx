@@ -1,13 +1,18 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { useData } from "@/lib/data-context";
 
 interface InvoiceItem {
   id: string;
   title: string;
   subtitle: string;
   quantity: number;
-  unitPrice: number;
+  prices: {
+    FCFA: number;
+    EUR: number;
+    USD: number;
+  };
 }
 
 type Currency = "FCFA" | "EUR" | "USD";
@@ -22,20 +27,39 @@ export function InteractiveInvoice() {
   const [currency, setCurrency] = useState<Currency>("FCFA");
   const [copied, setCopied] = useState(false);
 
+  // Safe data context hook (in case rendered outside DataProvider)
+  let organizationData: any = null;
+  try {
+    const data = useData();
+    if (data?.organization?.name && data.organization.name !== "GESFACTURE") {
+      organizationData = data.organization;
+    }
+  } catch (e) {
+    // context not present, fallback cleanly
+  }
+
   const [items, setItems] = useState<InvoiceItem[]>([
     {
       id: "item-1",
-      title: "Conception identité visuelle & UI Kit",
-      subtitle: "Design système Figma, livrables haute résolution",
+      title: "Abonnement Annuel GesFacture Enterprise — Licence Équipe",
+      subtitle: "Facturation certifiée UEMOA & CEMAC, module Mobile Money natif, exports comptables SYSCOHADA",
       quantity: 1,
-      unitPrice: 350000,
+      prices: {
+        FCFA: 350000,
+        EUR: 535,
+        USD: 580,
+      },
     },
     {
       id: "item-2",
-      title: "Développement Frontend Webflow / Tailwind",
-      subtitle: "Intégration responsive & optimisation SEO mobile",
+      title: "Pack Intégration Passerelle Mobile Money & Formation Comptable",
+      subtitle: "Configuration passerelle Wave QR Code, Orange Money API & accompagnement équipe (2 sessions)",
       quantity: 2,
-      unitPrice: 150000,
+      prices: {
+        FCFA: 150000,
+        EUR: 230,
+        USD: 250,
+      },
     },
   ]);
 
@@ -50,7 +74,15 @@ export function InteractiveInvoice() {
   const handlePriceChange = (id: string, price: number) => {
     setItems((prev) =>
       prev.map((item) =>
-        item.id === id ? { ...item, unitPrice: Math.max(0, price || 0) } : item
+        item.id === id
+          ? {
+              ...item,
+              prices: {
+                ...item.prices,
+                [currency]: Math.max(0, price || 0),
+              },
+            }
+          : item
       )
     );
   };
@@ -61,16 +93,16 @@ export function InteractiveInvoice() {
 
   const { subtotal, tva, totalTTC } = useMemo(() => {
     const sub = items.reduce(
-      (acc, item) => acc + item.quantity * item.unitPrice,
+      (acc, item) => acc + item.quantity * (item.prices[currency] || 0),
       0
     );
-    const tax = sub * 0.18; // 18% UEMOA standard VAT
+    const tax = Math.round(sub * 0.18); // 18% standard VAT
     return {
       subtotal: sub,
       tva: tax,
       totalTTC: sub + tax,
     };
-  }, [items]);
+  }, [items, currency]);
 
   const handleCopyLink = () => {
     if (typeof window !== "undefined" && navigator?.clipboard) {
@@ -79,6 +111,16 @@ export function InteractiveInvoice() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2400);
   };
+
+  // Real Organization issuer values
+  const issuerName = organizationData?.legalName || organizationData?.name || "GESFACTURE SAS";
+  const issuerTaxId = organizationData?.taxId
+    ? `NINEA : ${organizationData.taxId}`
+    : "NINEA : 009842103 2V3 • RCCM : SN-DKR-2026-B-1420";
+  const issuerAddress = organizationData?.city
+    ? `${organizationData.address ? `${organizationData.address} • ` : ""}${organizationData.city}, ${organizationData.country || "Sénégal"}`
+    : "Plateau, Boulevard de la République • Dakar, Sénégal";
+  const issuerEmail = organizationData?.email || "facturation@gesfacture.sn";
 
   return (
     <div
@@ -139,26 +181,26 @@ export function InteractiveInvoice() {
         </div>
       </div>
 
-      {/* Billing Info Grid */}
+      {/* Billing Info Grid — Real Professional Data */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 my-5 sm:my-6 text-sm">
         <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-100">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
             Émetteur
           </span>
-          <p className="font-bold text-slate-900">Studio Teranga Creatives SARL</p>
-          <p className="text-slate-500 text-xs">
-            NINEA : 009234812 2V3 • Dakar, Sénégal
-          </p>
-          <p className="text-slate-500 text-xs">contact@studioteranga.sn</p>
+          <p className="font-bold text-slate-900">{issuerName}</p>
+          <p className="text-slate-500 text-xs">{issuerTaxId}</p>
+          <p className="text-slate-500 text-xs">{issuerAddress}</p>
+          <p className="text-indigo-600 font-medium text-xs mt-0.5">{issuerEmail}</p>
         </div>
 
         <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-100">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
             Client Facturé
           </span>
-          <p className="font-bold text-slate-900">Kora Logistics Côte d'Ivoire</p>
-          <p className="text-slate-500 text-xs">Abidjan, Cocody Riviera 3</p>
-          <p className="text-slate-500 text-xs">finance@koralogistics.ci</p>
+          <p className="font-bold text-slate-900">Société Africaine de Distribution & Services (SADS SA)</p>
+          <p className="text-slate-500 text-xs">Immeuble Horizon, Boulevard VGE • Abidjan, Côte d'Ivoire</p>
+          <p className="text-slate-500 text-xs">RCCM : CI-ABJ-2024-B-8921 • NIF : 2108420-A</p>
+          <p className="text-indigo-600 font-medium text-xs mt-0.5">comptabilite@sads-afrique.com</p>
         </div>
       </div>
 
@@ -175,7 +217,8 @@ export function InteractiveInvoice() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {items.map((item) => {
-              const rowTotal = item.quantity * item.unitPrice;
+              const currentPrice = item.prices[currency] || 0;
+              const rowTotal = item.quantity * currentPrice;
               return (
                 <tr key={item.id}>
                   <td className="py-3.5 pr-4">
@@ -196,16 +239,19 @@ export function InteractiveInvoice() {
                     />
                   </td>
                   <td className="py-3.5 px-3 text-right">
-                    <input
-                      type="number"
-                      step={5000}
-                      value={item.unitPrice}
-                      onChange={(e) =>
-                        handlePriceChange(item.id, parseFloat(e.target.value) || 0)
-                      }
-                      className="w-28 text-right text-sm border-slate-200 rounded-lg p-1 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-indigo-500 font-mono font-medium"
-                      aria-label="Prix Unitaire"
-                    />
+                    <div className="inline-flex items-center gap-1 justify-end">
+                      <input
+                        type="number"
+                        step={currency === "FCFA" ? 5000 : 10}
+                        value={currentPrice}
+                        onChange={(e) =>
+                          handlePriceChange(item.id, parseFloat(e.target.value) || 0)
+                        }
+                        className="w-24 text-right text-sm border-slate-200 rounded-lg p-1 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-indigo-500 font-mono font-medium"
+                        aria-label="Prix Unitaire"
+                      />
+                      <span className="text-xs text-slate-400 font-mono">{currencySymbols[currency]}</span>
+                    </div>
                   </td>
                   <td className="py-3.5 pl-3 text-right font-mono font-semibold text-slate-900 whitespace-nowrap">
                     {formatNumber(rowTotal)} {currencySymbols[currency]}
