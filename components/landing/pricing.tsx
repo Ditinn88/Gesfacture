@@ -2,8 +2,10 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/lib/auth-context";
 
 export function Pricing() {
+  const { openAuthModal } = useAuth();
   const [isYearly, setIsYearly] = useState(false);
 
   return (
@@ -87,12 +89,13 @@ export function Pricing() {
               </ul>
             </div>
             <div className="mt-8 pt-6 border-t border-slate-200">
-              <Link
-                href="/login?tab=signup"
-                className="block w-full text-center py-3 px-4 rounded-xl font-semibold text-sm border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors"
+              <button
+                type="button"
+                onClick={() => openAuthModal("signup")}
+                className="block w-full text-center py-3 px-4 rounded-xl font-semibold text-sm border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 Commencer gratuitement
-              </Link>
+              </button>
             </div>
           </div>
 
@@ -144,12 +147,13 @@ export function Pricing() {
               </ul>
             </div>
             <div className="mt-8 pt-6 border-t border-slate-100">
-              <Link
-                href="/login?tab=signup"
-                className="block w-full text-center py-3.5 px-4 rounded-xl font-bold text-sm bg-brand-deep hover:bg-brand-primary text-white shadow-btn-glow transition-all hover:scale-[1.02] active:scale-95"
+              <button
+                type="button"
+                onClick={() => openAuthModal("signup")}
+                className="block w-full text-center py-3.5 px-4 rounded-xl font-bold text-sm bg-brand-deep hover:bg-brand-primary text-white shadow-btn-glow transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
               >
                 Essayer 14 jours gratuits
-              </Link>
+              </button>
             </div>
           </div>
 
@@ -187,12 +191,13 @@ export function Pricing() {
               </ul>
             </div>
             <div className="mt-8 pt-6 border-t border-slate-200">
-              <Link
-                href="/login?tab=signup"
-                className="block w-full text-center py-3 px-4 rounded-xl font-semibold text-sm border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors"
+              <button
+                type="button"
+                onClick={() => openAuthModal("signup")}
+                className="block w-full text-center py-3 px-4 rounded-xl font-semibold text-sm border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 Contacter les ventes
-              </Link>
+              </button>
             </div>
           </div>
 
