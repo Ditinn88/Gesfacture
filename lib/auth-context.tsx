@@ -9,7 +9,8 @@ interface AuthContextType {
   session: Session | null;
   isLoading: boolean;
   isAuthModalOpen: boolean;
-  openAuthModal: () => void;
+  authModalTab: "login" | "signup" | "forgot" | "reset";
+  openAuthModal: (tab?: "login" | "signup" | "forgot" | "reset") => void;
   closeAuthModal: () => void;
   signInWithEmail: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUpWithEmail: (email: string, password: string, fullName?: string) => Promise<{ error: Error | null; requiresConfirmation?: boolean }>;
@@ -29,6 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalTab, setAuthModalTab] = useState<"login" | "signup" | "forgot" | "reset">("login");
 
   useEffect(() => {
     let isMounted = true;
@@ -103,15 +105,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const openAuthModal = () => setIsAuthModalOpen(true);
+  const openAuthModal = (tab: "login" | "signup" | "forgot" | "reset" = "login") => {
+    setAuthModalTab(tab);
+    setIsAuthModalOpen(true);
+  };
   const closeAuthModal = () => setIsAuthModalOpen(false);
 
   const signInWithEmail = async (email: string, password: string) => {
-    if (!isSupabaseConfigured || !supabase) {
-      return { error: new Error("Supabase n'est pas configuré.") };
-    }
-
     const cleanEmail = email.trim().toLowerCase();
+
+    if (!isSupabaseConfigured || !supabase) {
+      if (!cleanEmail || !password) {
+        return { error: new Error("Veuillez renseigner votre email et mot de passe.") };
+      }
+
+      let localAccounts: Record<string, { email: string; password?: string; name?: string }> = {};
+      try {
+        const stored = localStorage.getItem("gesfacture_local_accounts");
+        if (stored) localAccounts = JSON.parse(stored);
+      } catch (e) {}
+
+      const existing = localAccounts[cleanEmail];
+      if (existing && existing.password && existing.password !== password) {
+        return { error: new Error("Mot de passe incorrect pour cette adresse email.") };
+      }
+
+      const defaultName = cleanEmail.split("@")[0].replace(/[._-]/g, " ");
+      const userName = existing?.name || (defaultName.charAt(0).toUpperCase() + defaultName.slice(1));
+
+      localAccounts[cleanEmail] = {
+        email: cleanEmail,
+        password: password,
+        name: userName,
+      };
+      try {
+        localStorage.setItem("gesfacture_local_accounts", JSON.stringify(localAccounts));
+      } catch (e) {}
+
+      const localUser: any = {
+        id: "usr-" + Date.now(),
+        email: cleanEmail,
+        user_metadata: {
+          full_name: userName,
+        },
+        app_metadata: { provider: "local" },
+        aud: "authenticated",
+        created_at: new Date().toISOString(),
+      };
+
+      setUser(localUser);
+      try {
+        localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(localUser));
+      } catch (e) {}
+
+      closeAuthModal();
+      return { error: null };
+    }
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email: cleanEmail,
@@ -143,13 +192,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUpWithEmail = async (email: string, password: string, fullName?: string) => {
-    if (!isSupabaseConfigured || !supabase) {
-      return { error: new Error("Supabase n'est pas configuré.") };
-    }
-
     const cleanEmail = email.trim().toLowerCase();
     const cleanName = fullName?.trim() || cleanEmail.split("@")[0];
     const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+
+    if (!isSupabaseConfigured || !supabase) {
+      if (!cleanEmail || !password) {
+        return { error: new Error("Veuillez renseigner votre email et mot de passe.") };
+      }
+      if (password.length < 6) {
+        return { error: new Error("Le mot de passe doit comporter au moins 6 caractères.") };
+      }
+
+      let localAccounts: Record<string, { email: string; password?: string; name?: string }> = {};
+      try {
+        const stored = localStorage.getItem("gesfacture_local_accounts");
+        if (stored) localAccounts = JSON.parse(stored);
+      } catch (e) {}
+
+      localAccounts[cleanEmail] = {
+        email: cleanEmail,
+        password,
+        name: cleanName,
+      };
+      try {
+        localStorage.setItem("gesfacture_local_accounts", JSON.stringify(localAccounts));
+      } catch (e) {}
+
+      const localUser: any = {
+        id: "usr-" + Date.now(),
+        email: cleanEmail,
+        user_metadata: {
+          full_name: cleanName,
+        },
+        app_metadata: { provider: "local" },
+        aud: "authenticated",
+        created_at: new Date().toISOString(),
+      };
+
+      setUser(localUser);
+      try {
+        localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(localUser));
+      } catch (e) {}
+
+      closeAuthModal();
+      return { error: null, requiresConfirmation: false };
+    }
 
     const { data, error } = await supabase.auth.signUp({
       email: cleanEmail,
@@ -194,12 +282,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const resetPasswordForEmail = async (email: string): Promise<{ error: Error | null }> => {
-    if (!isSupabaseConfigured || !supabase) {
-      return { error: new Error("Supabase n'est pas configuré.") };
-    }
-
     const cleanEmail = email.trim().toLowerCase();
     const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+
+    if (!isSupabaseConfigured || !supabase) {
+      return { error: null };
+    }
 
     const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
       redirectTo: `${origin}/login?tab=reset`,
@@ -217,12 +305,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updatePassword = async (newPassword: string): Promise<{ error: Error | null }> => {
-    if (!isSupabaseConfigured || !supabase) {
-      return { error: new Error("Supabase n'est pas configuré.") };
-    }
-
     if (newPassword.length < 6) {
       return { error: new Error("Le mot de passe doit comporter au moins 6 caractères.") };
+    }
+
+    if (!isSupabaseConfigured || !supabase) {
+      if (user && user.email) {
+        try {
+          const stored = localStorage.getItem("gesfacture_local_accounts");
+          const accounts = stored ? JSON.parse(stored) : {};
+          if (accounts[user.email]) {
+            accounts[user.email].password = newPassword;
+            localStorage.setItem("gesfacture_local_accounts", JSON.stringify(accounts));
+          }
+        } catch (e) {}
+      }
+      return { error: null };
     }
 
     const { data, error } = await supabase.auth.updateUser({
@@ -321,6 +419,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         session,
         isLoading,
         isAuthModalOpen,
+        authModalTab,
         openAuthModal,
         closeAuthModal,
         signInWithEmail,

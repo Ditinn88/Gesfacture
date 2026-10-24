@@ -77,7 +77,7 @@ export default function InvoicePrintPage({
       : "ENVOYÉE";
 
   return (
-    <div className="bg-white min-h-screen text-neutral-900 font-sans p-6 sm:p-12 max-w-4xl mx-auto">
+    <div className="bg-white min-h-screen text-neutral-900 font-sans p-6 sm:p-12 print:p-0 print:m-0 print:min-h-0 max-w-4xl mx-auto">
       {/* Top Controls (Hidden during print) */}
       <div className="no-print flex items-center justify-between pb-6 mb-6 border-b border-neutral-200">
         <Link
@@ -98,9 +98,9 @@ export default function InvoicePrintPage({
       </div>
 
       {/* Official Invoice Sheet */}
-      <div className="space-y-8">
+      <div id="printable-invoice" className="space-y-6 sm:space-y-8 print:space-y-3">
         {/* Header */}
-        <div className="flex justify-between items-start pb-6 border-b border-neutral-200">
+        <div className="flex justify-between items-start pb-4 sm:pb-6 print:pb-3 border-b border-neutral-200">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-neutral-900 text-white flex items-center justify-center font-serif font-bold text-base">
@@ -137,7 +137,7 @@ export default function InvoicePrintPage({
         </div>
 
         {/* Client & Dates */}
-        <div className="grid grid-cols-2 gap-8 text-xs leading-relaxed py-2">
+        <div className="grid grid-cols-2 gap-8 text-xs leading-relaxed py-2 print:py-1">
           <div>
             <span className="font-semibold text-neutral-400 uppercase text-[10px] tracking-wider block mb-1">
               Facturé à :
@@ -177,29 +177,29 @@ export default function InvoicePrintPage({
         </div>
 
         {/* Items Table */}
-        <div className="border border-neutral-200 rounded-xl overflow-hidden mt-4">
+        <div className="border border-neutral-200 rounded-xl overflow-hidden mt-3 print:mt-2">
           <table className="w-full text-left text-xs">
             <thead className="bg-[#fafaf9] text-neutral-500 uppercase text-[10px] font-semibold border-b border-neutral-200">
               <tr>
-                <th className="py-2.5 px-4">Description</th>
-                <th className="py-2.5 px-3 text-center">Qté</th>
-                <th className="py-2.5 px-3 text-right">Prix Unitaire HT</th>
-                <th className="py-2.5 px-4 text-right">Total HT ({getCurrencySymbol(currency)})</th>
+                <th className="py-2 px-3 print:py-1.5 print:px-2">Description</th>
+                <th className="py-2 px-2 print:py-1.5 print:px-1 text-center">Qté</th>
+                <th className="py-2 px-3 print:py-1.5 print:px-2 text-right">Prix Unitaire HT</th>
+                <th className="py-2 px-3 print:py-1.5 print:px-2 text-right">Total HT ({getCurrencySymbol(currency)})</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-200">
               {items.map((item, idx) => (
                 <tr key={item.id || idx}>
-                  <td className="py-3 px-4 font-medium text-neutral-900">
+                  <td className="py-2.5 px-3 print:py-1.5 print:px-2 font-medium text-neutral-900">
                     {item.description}
                   </td>
-                  <td className="py-3 px-3 text-center text-neutral-600 font-mono">
+                  <td className="py-2.5 px-2 print:py-1.5 print:px-1 text-center text-neutral-600 font-mono">
                     {item.quantity}
                   </td>
-                  <td className="py-3 px-3 text-right text-neutral-600 font-mono">
+                  <td className="py-2.5 px-3 print:py-1.5 print:px-2 text-right text-neutral-600 font-mono">
                     {formatFCFA(item.unitPrice, currency)}
                   </td>
-                  <td className="py-3 px-4 text-right font-bold text-neutral-900 font-mono">
+                  <td className="py-2.5 px-3 print:py-1.5 print:px-2 text-right font-bold text-neutral-900 font-mono">
                     {formatFCFA(item.total, currency)}
                   </td>
                 </tr>
@@ -209,8 +209,8 @@ export default function InvoicePrintPage({
         </div>
 
         {/* Totals */}
-        <div className="flex justify-end pt-4">
-          <div className="w-72 p-4 rounded-xl bg-neutral-50 border border-neutral-200 space-y-2 text-xs">
+        <div className="flex justify-end pt-3 print:pt-2">
+          <div className="w-72 p-3 sm:p-4 print:p-2.5 rounded-xl bg-neutral-50 border border-neutral-200 space-y-1.5 print:space-y-1 text-xs">
             <div className="flex justify-between text-neutral-600">
               <span>Sous-total Brut HT :</span>
               <span className="font-mono font-medium">{formatFCFA(subtotal, currency)}</span>
@@ -229,7 +229,7 @@ export default function InvoicePrintPage({
         </div>
 
         {/* Legal Mentions */}
-        <div className="pt-4 border-t border-neutral-200 space-y-1 text-[11px] text-neutral-500">
+        <div className="pt-3 print:pt-2 border-t border-neutral-200 space-y-1 text-[11px] print:text-[10px] text-neutral-500">
           <p className="font-semibold text-neutral-800">Conditions de règlement :</p>
           <p className="italic leading-relaxed">
             {invoice.notes || "Paiement attendu sous 15 jours. Tout retard donnera lieu à application des pénalités selon les normes OHADA."}
@@ -237,7 +237,7 @@ export default function InvoicePrintPage({
         </div>
 
         {/* Footer Signature */}
-        <div className="pt-6 border-t border-neutral-200 flex justify-between items-end gap-4">
+        <div className="pt-4 sm:pt-6 print:pt-3 border-t border-neutral-200 flex justify-between items-end gap-4">
           <div className="space-y-1 text-xs">
             <span className="text-[10px] font-semibold uppercase text-neutral-400 tracking-wider">
               Coordonnées de Règlement

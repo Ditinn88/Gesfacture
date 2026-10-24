@@ -193,10 +193,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Brand Header with Dedicated Mobile Close Button */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100 dark:border-neutral-800">
           <Link
-            href="/dashboard"
+            href="/"
             className="flex items-center gap-2.5 group focus:outline-none"
+            title="Retour à la page d'accueil GesFacture"
             onClick={() => {
-              setActivePath("/dashboard");
               onClose?.();
             }}
           >

@@ -5,27 +5,28 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/**
- * Normalise and return display currency symbol / code:
- * - XOF / FCFA -> "FCFA"
- * - GNF -> "GNF"
- * - XAF -> "FCFA"
- * - EUR -> "€"
- * - USD -> "$"
- * - CAD -> "CAD"
- * - GBP -> "£"
- */
-export function getCurrencySymbol(currency?: string): string {
-  if (!currency) return "FCFA";
-  const clean = currency.toUpperCase().trim();
-  if (clean === "XOF" || clean.includes("FCFA")) return "FCFA";
-  if (clean === "GNF" || clean.includes("GUINÉEN") || clean.includes("GUINEEN")) return "GNF";
-  if (clean === "XAF") return "FCFA";
-  if (clean === "EUR" || clean === "EURO" || clean === "€") return "€";
-  if (clean === "USD" || clean === "DOLLAR" || clean === "$") return "$";
-  if (clean === "CAD") return "CAD";
-  if (clean === "GBP" || clean === "£") return "£";
-  return clean;
+export const AVAILABLE_CURRENCIES = [
+  { code: "XOF", symbol: "FCFA", label: "FCFA — Franc CFA UEMOA (XOF)" },
+  { code: "XAF", symbol: "FCFA", label: "FCFA — Franc CFA CEMAC (XAF)" },
+  { code: "EUR", symbol: "€", label: "EUR (€) — Euro" },
+  { code: "USD", symbol: "$", label: "USD ($) — Dollar US" },
+  { code: "GNF", symbol: "GNF", label: "GNF — Franc Guinéen" },
+  { code: "MAD", symbol: "DH", label: "MAD (DH) — Dirham Marocain" },
+  { code: "GBP", symbol: "£", label: "GBP (£) — Livre Sterling" },
+  { code: "CAD", symbol: "$ CA", label: "CAD ($) — Dollar Canadien" },
+  { code: "CHF", symbol: "CHF", label: "CHF — Franc Suisse" },
+] as const;
+
+export function getCurrencySymbol(currencyCode?: string): string {
+  if (!currencyCode) return "FCFA";
+  const normalized = currencyCode.trim().toUpperCase();
+  const found = AVAILABLE_CURRENCIES.find(
+    (c) =>
+      c.code === normalized ||
+      c.symbol.toUpperCase() === normalized ||
+      normalized.includes(c.code)
+  );
+  return found ? found.symbol : currencyCode;
 }
 
 /**

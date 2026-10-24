@@ -28,20 +28,15 @@ import {
 import { Invoice, InvoiceItem } from "@/lib/mock-data";
 import {
   formatFCFA,
+  formatCurrency,
   formatDate,
   toLocalYMD,
   getCurrencyLabel,
   getCurrencySymbol,
   joinParts,
   organizationHeaderLines,
+  AVAILABLE_CURRENCIES,
 } from "@/lib/utils";
-
-const STATUS_LABELS: Record<Invoice["status"], string> = {
-  brouillon: "Brouillon",
-  envoyee: "Envoyée",
-  payee: "Payée",
-  en_retard: "En retard",
-};
 import { useData } from "@/lib/data-context";
 import { useAuth } from "@/lib/auth-context";
 import { CustomDropdown, DropdownItem } from "@/components/ui/custom-dropdown";
@@ -49,16 +44,14 @@ import { CustomDatePicker } from "@/components/ui/custom-date-picker";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { printInvoice, downloadInvoicePdf, downloadInvoiceDocument } from "@/lib/print-invoice";
 
-// useSearchParams() exige une frontière Suspense, sinon `next build` échoue au prérendu
-export default function CreateInvoicePage() {
-  return (
-    <Suspense fallback={null}>
-      <CreateInvoiceForm />
-    </Suspense>
-  );
-}
+const STATUS_LABELS: Record<Invoice["status"], string> = {
+  brouillon: "Brouillon",
+  envoyee: "Envoyée",
+  payee: "Payée",
+  en_retard: "En retard",
+};
 
-function CreateInvoiceForm() {
+function CreateInvoiceContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit");
@@ -110,6 +103,13 @@ function CreateInvoiceForm() {
     }
   }, [editId, invoices, organization.invoicePrefix, currentYear]);
 
+  const [currency, setCurrency] = useState(organization.currency || "XOF");
+
+  useEffect(() => {
+    if (!editId && organization.currency) {
+      setCurrency(organization.currency);
+    }
+  }, [editId, organization.currency]);
   const [paymentMethod, setPaymentMethod] = useState<
     "Wave" | "Orange Money" | "MTN MoMo" | "Virement Bancaire" | "Espèces"
   >("Wave");
@@ -145,8 +145,6 @@ function CreateInvoiceForm() {
   // (Realtime, nouveau client) ne doit pas écraser la saisie en cours
   const loadedEditId = React.useRef<string | null>(null);
 
-  // Devise de la facture : celle de la facture éditée, sinon celle des paramètres
-  const invoiceCurrency = existingInvoice?.currency || organization.currency || "XOF";
 
   // Load existing invoice if edit mode
   useEffect(() => {
@@ -160,6 +158,9 @@ function CreateInvoiceForm() {
         setDueDate(existing.dueDate);
         if (existing.paymentMethod) {
           setPaymentMethod(existing.paymentMethod as any);
+        }
+        if (existing.currency) {
+          setCurrency(existing.currency);
         }
         if (existing.notes) {
           setNotes(existing.notes);
@@ -263,13 +264,13 @@ function CreateInvoiceForm() {
       address: activeClient?.address || "",
       phone: activeClient?.phone || "",
     },
+    currency,
     issueDate,
     dueDate,
     subtotal,
     taxRate,
     taxAmount,
     discountPercent: applyDiscount ? discountPercent : 0,
-    currency: invoiceCurrency,
     amount: totalTTC,
     paidAmount: 0,
     status: "envoyee",
@@ -309,13 +310,13 @@ function CreateInvoiceForm() {
         address: activeClient.address || "",
         phone: activeClient.phone || "",
       },
+      currency,
       issueDate,
       dueDate,
       subtotal,
       taxRate,
       taxAmount,
       discountPercent: applyDiscount ? discountPercent : 0,
-      currency: invoiceCurrency,
       amount: totalTTC,
       paidAmount: finalStatus === "payee" ? totalTTC : 0,
       status: finalStatus,
@@ -397,6 +398,10 @@ function CreateInvoiceForm() {
           </Link>
           <div>
             <div className="flex items-center gap-2 text-xs text-neutral-400">
+              <Link href="/" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors font-medium">
+                Accueil
+              </Link>
+              <span>/</span>
               <Link href="/invoices" className="hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">
                 Factures
               </Link>
@@ -590,6 +595,33 @@ function CreateInvoiceForm() {
                   </select>
                 </div>
               </div>
+
+              {/* Field 7: Devise de Facturation Variable */}
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 flex items-center justify-between">
+                  <span>Devise de Facturation *</span>
+                  <span className="text-[11px] text-neutral-400 font-normal">
+                    Symbole actif : <strong className="font-mono text-neutral-900 dark:text-white">{getCurrencySymbol(currency)}</strong>
+                  </span>
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {AVAILABLE_CURRENCIES.map((curr) => (
+                    <button
+                      key={curr.code}
+                      type="button"
+                      onClick={() => setCurrency(curr.code)}
+                      className={`px-3 py-2 text-xs font-semibold rounded-xl border text-left transition-all flex flex-col gap-0.5 ${
+                        currency === curr.code
+                          ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 border-neutral-900 dark:border-white shadow-xs"
+                          : "bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700 hover:border-neutral-400"
+                      }`}
+                    >
+                      <span className="font-bold text-xs">{curr.symbol}</span>
+                      <span className="text-[10px] opacity-75 truncate">{curr.code}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -601,14 +633,25 @@ function CreateInvoiceForm() {
                   Lignes de Prestations / Services
                 </h2>
                 <p className="text-[11px] text-neutral-400 dark:text-neutral-500 mt-0.5">
-                  Détaillez chaque prestation avec son prix unitaire en FCFA.
+                  Détaillez chaque prestation avec son prix unitaire en {getCurrencySymbol(currency)}.
                 </p>
               </div>
 
-              {/* Currency badge */}
-              <span className="px-2.5 py-1 text-[11px] font-mono font-medium rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700">
-                Devise : {invoiceCurrency}
-              </span>
+              {/* Currency Selector Badge */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] text-neutral-400 font-medium hidden sm:inline">Devise :</span>
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="px-2.5 py-1 text-xs font-bold rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-700 focus:outline-none cursor-pointer"
+                >
+                  {AVAILABLE_CURRENCIES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.symbol} ({c.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Dynamic Items List */}
@@ -665,11 +708,11 @@ function CreateInvoiceForm() {
 
                     <div className="col-span-4 sm:col-span-4">
                       <label className="block text-[11px] font-medium text-neutral-500 dark:text-neutral-400 mb-1">
-                        Prix Unitaire HT
+                        Prix Unitaire HT ({getCurrencySymbol(currency)})
                       </label>
                       <input
                         type="number"
-                        step="1000"
+                        step="any"
                         min="0"
                         value={item.unitPrice}
                         onChange={(e) => handleItemChange(index, "unitPrice", e.target.value)}
@@ -682,7 +725,7 @@ function CreateInvoiceForm() {
                         Total Ligne
                       </span>
                       <div className="px-3 py-1.5 text-xs font-bold text-neutral-900 dark:text-white bg-neutral-100 dark:bg-neutral-700/60 rounded-lg font-mono">
-                        {formatFCFA(item.total || 0, invoiceCurrency)}
+                        {formatCurrency(item.total || 0, currency)}
                       </div>
                     </div>
                   </div>
@@ -762,25 +805,25 @@ function CreateInvoiceForm() {
             <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800/80 space-y-2 text-xs">
               <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
                 <span>Sous-total Brut HT :</span>
-                <span className="font-mono">{formatFCFA(rawSubtotal, invoiceCurrency)}</span>
+                <span className="font-mono">{formatCurrency(rawSubtotal, currency)}</span>
               </div>
 
               {applyDiscount && discountAmount > 0 && (
                 <div className="flex justify-between text-[#c5221f] dark:text-rose-400">
                   <span>Remise ({discountPercent}%) :</span>
-                  <span className="font-mono">- {formatFCFA(discountAmount, invoiceCurrency)}</span>
+                  <span className="font-mono">- {formatCurrency(discountAmount, currency)}</span>
                 </div>
               )}
 
               <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
                 <span>TVA ({taxRate}%) :</span>
-                <span className="font-mono">{formatFCFA(taxAmount, invoiceCurrency)}</span>
+                <span className="font-mono">{formatCurrency(taxAmount, currency)}</span>
               </div>
 
               <div className="pt-2 border-t border-neutral-200 dark:border-neutral-700 flex justify-between items-baseline font-bold text-neutral-900 dark:text-white">
                 <span className="text-sm">Total TTC à Payer :</span>
                 <span className="text-base sm:text-lg font-extrabold font-mono text-neutral-900 dark:text-white">
-                  {formatFCFA(totalTTC, invoiceCurrency)}
+                  {formatCurrency(totalTTC, currency)}
                 </span>
               </div>
             </div>
@@ -967,10 +1010,10 @@ function CreateInvoiceForm() {
                             {item.quantity}
                           </td>
                           <td className="py-2.5 text-right text-neutral-500 font-mono">
-                            {formatFCFA(item.unitPrice, invoiceCurrency)}
+                            {formatCurrency(item.unitPrice, currency)}
                           </td>
                           <td className="py-2.5 text-right font-semibold text-neutral-900 dark:text-white font-mono">
-                            {formatFCFA(item.total, invoiceCurrency)}
+                            {formatCurrency(item.total, currency)}
                           </td>
                         </tr>
                       ))}
@@ -982,25 +1025,25 @@ function CreateInvoiceForm() {
                 <div className="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/60 dark:border-neutral-700/60 space-y-2 text-xs">
                   <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
                     <span>Sous-total Brut HT :</span>
-                    <span className="font-mono font-medium">{formatFCFA(subtotal, invoiceCurrency)}</span>
+                    <span className="font-mono font-medium">{formatCurrency(subtotal, currency)}</span>
                   </div>
 
                   {applyDiscount && discountAmount > 0 && (
                     <div className="flex justify-between text-[#c5221f] dark:text-rose-400">
                       <span>Remise ({discountPercent}%) :</span>
-                      <span className="font-mono font-medium">- {formatFCFA(discountAmount, invoiceCurrency)}</span>
+                      <span className="font-mono font-medium">- {formatCurrency(discountAmount, currency)}</span>
                     </div>
                   )}
 
                   <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
                     <span>TVA ({taxRate}%) :</span>
-                    <span className="font-mono font-medium">{formatFCFA(taxAmount, invoiceCurrency)}</span>
+                    <span className="font-mono font-medium">{formatCurrency(taxAmount, currency)}</span>
                   </div>
 
                   <div className="pt-2.5 border-t border-neutral-200 dark:border-neutral-700 flex justify-between items-baseline font-bold text-neutral-900 dark:text-white">
                     <span className="text-xs uppercase tracking-wide">Total TTC Net :</span>
                     <span className="text-base sm:text-lg font-extrabold font-mono text-neutral-900 dark:text-white">
-                      {formatFCFA(totalTTC, invoiceCurrency)}
+                      {formatCurrency(totalTTC, currency)}
                     </span>
                   </div>
                 </div>
@@ -1223,7 +1266,7 @@ function CreateInvoiceForm() {
                   Total TTC Net :
                 </span>
                 <span className="font-mono font-extrabold text-base sm:text-lg text-neutral-900 dark:text-white">
-                  {formatFCFA(createdInvoice.amount, invoiceCurrency)}
+                  {formatFCFA(createdInvoice.amount, createdInvoice.currency)}
                 </span>
               </div>
             </div>
@@ -1315,7 +1358,7 @@ function CreateInvoiceForm() {
             <p className="text-sm font-mono font-bold text-neutral-800">
               {createdInvoice?.number || invoiceNumber}
             </p>
-            <p className="text-xs text-neutral-500">Devise : {getCurrencyLabel(invoiceCurrency)}</p>
+            <p className="text-xs text-neutral-500">Devise : {getCurrencyLabel(createdInvoice?.currency || currency)}</p>
             <div className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold border mt-1 border-neutral-300 text-neutral-700">
               Statut : {STATUS_LABELS[createdInvoice?.status || "envoyee"].toUpperCase()}
             </div>
@@ -1381,7 +1424,7 @@ function CreateInvoiceForm() {
                 <th className="py-2.5 px-4">Description</th>
                 <th className="py-2.5 px-3 text-center">Qté</th>
                 <th className="py-2.5 px-3 text-right">Prix Unitaire HT</th>
-                <th className="py-2.5 px-4 text-right">Total HT ({getCurrencySymbol(invoiceCurrency)})</th>
+                <th className="py-2.5 px-4 text-right">Total HT ({getCurrencySymbol(createdInvoice?.currency || currency)})</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-200">
@@ -1394,10 +1437,10 @@ function CreateInvoiceForm() {
                     {item.quantity}
                   </td>
                   <td className="py-3 px-3 text-right text-neutral-600 font-mono">
-                    {formatFCFA(item.unitPrice, invoiceCurrency)}
+                    {formatCurrency(item.unitPrice, createdInvoice?.currency || currency)}
                   </td>
                   <td className="py-3 px-4 text-right font-bold text-neutral-900 font-mono">
-                    {formatFCFA(item.total, invoiceCurrency)}
+                    {formatCurrency(item.total, createdInvoice?.currency || currency)}
                   </td>
                 </tr>
               ))}
@@ -1411,19 +1454,19 @@ function CreateInvoiceForm() {
             <div className="flex justify-between text-neutral-600">
               <span>Sous-total Brut HT :</span>
               <span className="font-mono font-medium">
-                {formatFCFA(createdInvoice?.subtotal || subtotal, invoiceCurrency)}
+                {formatCurrency(createdInvoice?.subtotal || subtotal, createdInvoice?.currency || currency)}
               </span>
             </div>
             <div className="flex justify-between text-neutral-600">
               <span>TVA ({createdInvoice?.taxRate ?? taxRate}%) :</span>
               <span className="font-mono font-medium">
-                {formatFCFA(createdInvoice?.taxAmount || taxAmount, invoiceCurrency)}
+                {formatCurrency(createdInvoice?.taxAmount || taxAmount, createdInvoice?.currency || currency)}
               </span>
             </div>
             <div className="pt-2 border-t border-neutral-300 flex justify-between items-baseline font-bold text-neutral-900">
               <span className="text-xs uppercase tracking-wide">Total TTC Net :</span>
               <span className="font-extrabold font-mono text-base text-neutral-900">
-                {formatFCFA(createdInvoice?.amount || totalTTC, invoiceCurrency)}
+                {formatCurrency(createdInvoice?.amount || totalTTC, createdInvoice?.currency || currency)}
               </span>
             </div>
           </div>
@@ -1468,5 +1511,24 @@ function CreateInvoiceForm() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CreateInvoicePage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="min-h-[400px] flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 flex items-center justify-center font-bold text-sm animate-pulse">
+              G
+            </div>
+            <p className="text-xs text-neutral-400">Chargement de la page de facturation...</p>
+          </div>
+        </div>
+      }
+    >
+      <CreateInvoiceContent />
+    </React.Suspense>
   );
 }

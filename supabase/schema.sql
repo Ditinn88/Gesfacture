@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS public.invoices (
   client JSONB NOT NULL,
   issue_date TEXT NOT NULL,
   due_date TEXT NOT NULL,
+  currency TEXT DEFAULT 'XOF',
   amount NUMERIC NOT NULL DEFAULT 0,
   subtotal NUMERIC NOT NULL DEFAULT 0,
   tax_rate NUMERIC DEFAULT 18,

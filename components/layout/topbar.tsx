@@ -106,8 +106,9 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
 
         {/* Mobile Uniform Black Logo matching Desktop 1:1 */}
         <Link
-          href="/dashboard"
+          href="/"
           className="flex items-center gap-2 lg:hidden group focus:outline-none"
+          title="Retour à la page d'accueil GesFacture"
         >
           <div className="w-7 h-7 rounded-lg bg-neutral-900 dark:bg-white flex items-center justify-center text-white dark:text-neutral-900 font-bold text-xs shadow-none">
             <span className="font-serif">G</span>
@@ -321,7 +322,7 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
         ) : (
           <button
             type="button"
-            onClick={openAuthModal}
+            onClick={() => openAuthModal()}
             className="group inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 text-xs font-medium text-neutral-800 dark:text-neutral-200 bg-white dark:bg-neutral-900 hover:bg-neutral-900 hover:text-white dark:hover:bg-white dark:hover:text-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-none transition-all duration-150 shrink-0 cursor-pointer"
             title="Se connecter ou créer un compte avec email"
           >

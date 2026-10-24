@@ -66,7 +66,7 @@ export default function DashboardPage() {
           {!user && (
             <button
               type="button"
-              onClick={openAuthModal}
+              onClick={() => openAuthModal()}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-white bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100 rounded-lg shadow-none transition-all duration-150 cursor-pointer"
             >
               <LogIn className="w-3.5 h-3.5" />
@@ -103,7 +103,7 @@ export default function DashboardPage() {
           </div>
           <button
             type="button"
-            onClick={openAuthModal}
+            onClick={() => openAuthModal()}
             className="px-3 py-1.5 text-xs font-medium text-neutral-900 dark:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl transition-colors shrink-0 cursor-pointer"
           >
             Connexion / Inscription

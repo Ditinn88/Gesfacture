@@ -1,7 +1,15 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { Invoice, InvoiceItem, Client, Organization, DEFAULT_ORGANIZATION } from "@/lib/mock-data";
+import {
+  Invoice,
+  InvoiceItem,
+  Client,
+  Organization,
+  DEFAULT_ORGANIZATION,
+  RECENT_INVOICES,
+  TOP_CLIENTS,
+} from "@/lib/mock-data";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import { sumByCurrency, toLocalYMD } from "@/lib/utils";
@@ -31,9 +39,9 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-const INVOICES_STORAGE_KEY = "gesfacture_invoices_v7";
-const CLIENTS_STORAGE_KEY = "gesfacture_clients_v7";
-const ORGANIZATION_STORAGE_KEY = "gesfacture_organization_v7";
+const INVOICES_STORAGE_KEY = "gesfacture_invoices_v8";
+const CLIENTS_STORAGE_KEY = "gesfacture_clients_v8";
+const ORGANIZATION_STORAGE_KEY = "gesfacture_organization_v8";
 
 // Cache local séparé par compte Supabase : un utilisateur ne voit jamais le cache d'un autre
 const storageKey = (base: string, cloudUserId: string | null) =>
@@ -304,19 +312,34 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     setIsCloudSynced(false);
 
-    // 1. Cache local du compte courant (vide si aucun : jamais les données d'un autre compte)
-    const cachedInvoices = readCache<Invoice[]>(storageKey(INVOICES_STORAGE_KEY, cloudUserId));
-    const cachedClients = readCache<Client[]>(storageKey(CLIENTS_STORAGE_KEY, cloudUserId));
-    const cachedOrg = readCache<Organization>(storageKey(ORGANIZATION_STORAGE_KEY, cloudUserId));
+    // 1. Cache local du compte courant (vide si aucun : jamais les données d'un autre compte).
+    // Les données saisies sous les clés v7 sont reprises telles quelles.
+    const readVersioned = <T,>(base: string): T | null =>
+      readCache<T>(storageKey(base, cloudUserId)) ??
+      readCache<T>(storageKey(base.replace(/_v8$/, "_v7"), cloudUserId));
+    const cachedInvoices = readVersioned<Invoice[]>(INVOICES_STORAGE_KEY);
+    const cachedClients = readVersioned<Client[]>(CLIENTS_STORAGE_KEY);
+    const cachedOrg = readVersioned<Organization>(ORGANIZATION_STORAGE_KEY);
+
+    // Premier lancement en mode local (aucune donnée, même ancienne) : factures et clients d'exemple
+    const seedExamples = !cloudUserId && cachedInvoices === null && cachedClients === null;
 
     setRawInvoices(
       Array.isArray(cachedInvoices)
         ? cachedInvoices
             .filter((i) => !isMockInvoice(i))
             .map((i) => ({ ...i, items: normalizeItems(i.items) }))
+        : seedExamples
+        ? RECENT_INVOICES
         : []
     );
-    setRawClients(Array.isArray(cachedClients) ? cachedClients.filter((c) => !isMockClient(c)) : []);
+    setRawClients(
+      Array.isArray(cachedClients)
+        ? cachedClients.filter((c) => !isMockClient(c))
+        : seedExamples
+        ? TOP_CLIENTS
+        : []
+    );
     setOrganization(
       cachedOrg && typeof cachedOrg === "object"
         ? { ...DEFAULT_ORGANIZATION, ...cachedOrg }
@@ -504,6 +527,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           id: newInvoice.id,
           number: newInvoice.number,
           client: newInvoice.client,
+          currency: newInvoice.currency || "XOF",
           issue_date: newInvoice.issueDate,
           due_date: newInvoice.dueDate,
           amount: newInvoice.amount,
@@ -516,7 +540,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           payment_method: newInvoice.paymentMethod,
           items: newInvoice.items || [],
           notes: newInvoice.notes || "",
-          currency: newInvoice.currency,
         })
         .then(({ error }) => {
           if (error) reportSyncError(`La facture ${newInvoice.number}`, error);
