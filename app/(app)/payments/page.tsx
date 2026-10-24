@@ -2,31 +2,38 @@
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
-import { CreditCard, ArrowUpRight, CheckCircle2, Clock } from "lucide-react";
+import { CreditCard, ArrowUpRight, CheckCircle2, Clock, Wallet } from "lucide-react";
 import { useData } from "@/lib/data-context";
-import { formatCurrency, formatDate, resolveInvoicesCurrency, sumByCurrency } from "@/lib/utils";
+import {
+  formatCurrency,
+  formatDate,
+  isPartiallyPaid,
+  paidAmountOf,
+  remainingAmountOf,
+  resolveInvoicesCurrency,
+  sumByCurrency,
+} from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { CurrencyTotals } from "@/components/ui/currency-totals";
+import { RecordPaymentModal } from "@/components/ui/record-payment-modal";
 import { Invoice } from "@/lib/mock-data";
 
-// Reste à encaisser sur une facture (montant TTC moins ce qui a déjà été réglé)
-const remainingOf = (inv: Invoice) => Math.max(0, inv.amount - (inv.paidAmount || 0));
-
 export default function PaymentsPage() {
-  const { invoices, organization, updateInvoiceStatus, isLoading } = useData();
+  const { invoices, organization, updateInvoiceStatus, recordPayment, isLoading } = useData();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [paymentInvoice, setPaymentInvoice] = useState<Invoice | null>(null);
 
   const currency = useMemo(
     () => resolveInvoicesCurrency(invoices, organization.currency || "XOF"),
     [invoices, organization.currency]
   );
 
-  // Encaissements = factures marquées comme payées
+  // Encaissements = factures payées et acomptes reçus sur des factures payées en partie
   const paidInvoices = useMemo(
     () =>
       invoices
-        .filter((inv) => inv.status === "payee")
+        .filter((inv) => paidAmountOf(inv) > 0)
         .sort((a, b) => (a.issueDate < b.issueDate ? 1 : -1)),
     [invoices]
   );
@@ -40,25 +47,55 @@ export default function PaymentsPage() {
     [invoices]
   );
 
-  const collectedTotals = paidInvoices.length ? sumByCurrency(paidInvoices, currency) : [];
+  const fullyPaidCount = paidInvoices.filter((inv) => inv.status === "payee").length;
+  const partialCount = paidInvoices.length - fullyPaidCount;
+
+  const collectedTotals = paidInvoices.length
+    ? sumByCurrency(
+        paidInvoices.map((inv) => ({ amount: paidAmountOf(inv), currency: inv.currency })),
+        currency
+      )
+    : [];
   const pendingTotals = pendingInvoices.length
     ? sumByCurrency(
-        pendingInvoices.map((inv) => ({ amount: remainingOf(inv), currency: inv.currency })),
+        pendingInvoices.map((inv) => ({ amount: remainingAmountOf(inv), currency: inv.currency })),
         currency
       )
     : [];
 
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
   const markAsPaid = (inv: Invoice) => {
     updateInvoiceStatus(inv.id, "payee");
-    setToastMessage(`Facture ${inv.number} marquée comme payée (${formatCurrency(inv.amount, inv.currency)}).`);
-    setTimeout(() => setToastMessage(null), 3000);
+    showToast(`Facture ${inv.number} marquée comme payée (${formatCurrency(inv.amount, inv.currency)}).`);
+  };
+
+  const confirmPayment = (amount: number) => {
+    if (!paymentInvoice) return;
+    const updated = recordPayment(paymentInvoice.id, amount);
+    setPaymentInvoice(null);
+    if (!updated) return;
+    showToast(
+      updated.status === "payee"
+        ? `Paiement de ${formatCurrency(amount, updated.currency)} enregistré : facture ${updated.number} soldée.`
+        : `Paiement de ${formatCurrency(amount, updated.currency)} enregistré sur ${updated.number}. Reste à payer : ${formatCurrency(remainingAmountOf(updated), updated.currency)}.`
+    );
   };
 
   const summaryCards = [
     {
       title: "Encaissé",
       totals: collectedTotals,
-      subtitle: `${paidInvoices.length} facture(s) réglée(s)`,
+      subtitle:
+        [
+          (fullyPaidCount > 0 || partialCount === 0) && `${fullyPaidCount} facture(s) réglée(s)`,
+          partialCount > 0 && `${partialCount} payée(s) en partie`,
+        ]
+          .filter(Boolean)
+          .join(" · "),
       icon: <CheckCircle2 className="w-3.5 h-3.5" />,
     },
     {
@@ -177,7 +214,7 @@ export default function PaymentsPage() {
                       <td className="py-3.5 px-4 sm:px-6 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <span className="text-neutral-400 dark:text-neutral-500">{formatDate(inv.dueDate)}</span>
-                          <StatusBadge status={inv.status} />
+                          <StatusBadge status={inv.status} partial={isPartiallyPaid(inv)} />
                         </div>
                       </td>
                       <td className="py-3.5 px-4 font-semibold text-neutral-900 dark:text-white">{inv.client.name}</td>
@@ -186,9 +223,23 @@ export default function PaymentsPage() {
                         {inv.paymentMethod || "—"}
                       </td>
                       <td className="py-3.5 px-4 text-right font-bold text-neutral-900 dark:text-white whitespace-nowrap">
-                        {formatCurrency(remainingOf(inv), inv.currency)}
+                        {formatCurrency(remainingAmountOf(inv), inv.currency)}
+                        {isPartiallyPaid(inv) && (
+                          <span className="block text-[10px] font-normal text-neutral-400 dark:text-neutral-500">
+                            sur {formatCurrency(inv.amount, inv.currency)}
+                          </span>
+                        )}
                       </td>
                       <td className="py-3.5 px-4 sm:px-6 text-right">
+                        <div className="inline-flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setPaymentInvoice(inv)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-neutral-800 dark:text-neutral-200 bg-white dark:bg-neutral-800 hover:bg-neutral-900 hover:text-white hover:border-neutral-900 dark:hover:bg-white dark:hover:text-neutral-900 dark:hover:border-white border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-none transition-all duration-200 active:scale-95 whitespace-nowrap"
+                        >
+                          <Wallet className="w-3.5 h-3.5" />
+                          <span>Paiement partiel</span>
+                        </button>
                         <button
                           type="button"
                           onClick={() => markAsPaid(inv)}
@@ -197,6 +248,7 @@ export default function PaymentsPage() {
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           <span>Marquer payée</span>
                         </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -214,11 +266,11 @@ export default function PaymentsPage() {
           {isLoading ? (
             loadingRows
           ) : paidInvoices.length === 0 ? (
-            emptyState("Aucun encaissement", "Les factures marquées « Payée » apparaîtront ici.")
+            emptyState("Aucun encaissement", "Les factures payées, entièrement ou en partie, apparaîtront ici.")
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                {tableHead("Montant", "Statut")}
+                {tableHead("Encaissé", "Statut")}
                 <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800/80">
                   {paidInvoices.map((inv) => (
                     <tr key={inv.id} className="hover:bg-[#f6f6f5] dark:hover:bg-neutral-800/50 transition-all duration-150">
@@ -231,10 +283,15 @@ export default function PaymentsPage() {
                         {inv.paymentMethod || "—"}
                       </td>
                       <td className="py-3.5 px-4 text-right font-bold text-neutral-900 dark:text-white whitespace-nowrap">
-                        {formatCurrency(inv.amount, inv.currency)}
+                        {formatCurrency(paidAmountOf(inv), inv.currency)}
+                        {isPartiallyPaid(inv) && (
+                          <span className="block text-[10px] font-normal text-neutral-400 dark:text-neutral-500">
+                            sur {formatCurrency(inv.amount, inv.currency)}
+                          </span>
+                        )}
                       </td>
                       <td className="py-3.5 px-4 sm:px-6 text-right">
-                        <StatusBadge status="payee" />
+                        <StatusBadge status={inv.status} partial={isPartiallyPaid(inv)} />
                       </td>
                     </tr>
                   ))}
@@ -244,6 +301,12 @@ export default function PaymentsPage() {
           )}
         </div>
       </div>
+
+      <RecordPaymentModal
+        invoice={paymentInvoice}
+        onClose={() => setPaymentInvoice(null)}
+        onConfirm={confirmPayment}
+      />
     </div>
   );
 }

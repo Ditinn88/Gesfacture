@@ -13,7 +13,7 @@ import {
 import { useTheme } from "next-themes";
 import { useData } from "@/lib/data-context";
 import { Invoice } from "@/lib/mock-data";
-import { formatCurrency, getCurrencySymbol, isInCurrency, resolveInvoicesCurrency } from "@/lib/utils";
+import { formatCurrency, getCurrencySymbol, isInCurrency, paidAmountOf, resolveInvoicesCurrency } from "@/lib/utils";
 import { CurrencyTotals } from "@/components/ui/currency-totals";
 import { TrendingUp, Layers, CheckCircle } from "lucide-react";
 
@@ -81,9 +81,7 @@ export function RevenueChart({ invoices: propInvoices }: RevenueChartProps = {})
 
       if (bucket) {
         bucket.facture += inv.amount || 0;
-        if (inv.status === "payee") {
-          bucket.encaisse += inv.amount || 0;
-        }
+        bucket.encaisse += paidAmountOf(inv);
       }
     });
 
@@ -100,7 +98,7 @@ export function RevenueChart({ invoices: propInvoices }: RevenueChartProps = {})
   );
 
   const totalCollected = useMemo(
-    () => chartInvoices.filter((i) => i.status === "payee").reduce((sum, i) => sum + (i.amount || 0), 0),
+    () => chartInvoices.reduce((sum, i) => sum + paidAmountOf(i), 0),
     [chartInvoices]
   );
 

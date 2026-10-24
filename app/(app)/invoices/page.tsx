@@ -19,7 +19,16 @@ import {
   FileText,
 } from "lucide-react";
 import { useData } from "@/lib/data-context";
-import { formatCurrency, resolveInvoicesCurrency, sumByCurrency, formatDate, cn } from "@/lib/utils";
+import {
+  formatCurrency,
+  resolveInvoicesCurrency,
+  sumByCurrency,
+  formatDate,
+  cn,
+  isPartiallyPaid,
+  paidAmountOf,
+  remainingAmountOf,
+} from "@/lib/utils";
 import { StatusBadge, InvoiceStatusType } from "@/components/ui/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CurrencyTotals } from "@/components/ui/currency-totals";
@@ -94,13 +103,14 @@ export default function InvoicesListPage() {
   const totalAmount = sumByCurrency(invoices, defaultCurrency);
   const mainCurrency = resolveInvoicesCurrency(invoices, defaultCurrency);
   // An empty card shows "0" in the main invoice currency, not the organization's
-  const totalForStatus = (status: string) => {
-    const list = invoices.filter((i) => i.status === status);
-    return list.length ? sumByCurrency(list, defaultCurrency) : [];
-  };
-  const totalPaid = totalForStatus("payee");
-  const totalPending = totalForStatus("envoyee");
-  const totalOverdue = totalForStatus("en_retard");
+  const totalsOf = (list: typeof invoices, amountOf: (i: (typeof invoices)[number]) => number) =>
+    list.length
+      ? sumByCurrency(list.map((i) => ({ amount: amountOf(i), currency: i.currency })), defaultCurrency)
+      : [];
+  // Encaissé : factures payées et acomptes reçus ; en attente / en retard : reste dû seulement
+  const totalPaid = totalsOf(invoices.filter((i) => paidAmountOf(i) > 0), paidAmountOf);
+  const totalPending = totalsOf(invoices.filter((i) => i.status === "envoyee"), remainingAmountOf);
+  const totalOverdue = totalsOf(invoices.filter((i) => i.status === "en_retard"), remainingAmountOf);
 
   const confirmDelete = () => {
     if (deleteModalInvoice) {
@@ -432,7 +442,7 @@ export default function InvoicesListPage() {
 
                       {/* Status Pill Badge */}
                       <td className="py-3.5 px-3 whitespace-nowrap text-center">
-                        <StatusBadge status={inv.status as InvoiceStatusType} size="sm" />
+                        <StatusBadge status={inv.status as InvoiceStatusType} size="sm" partial={isPartiallyPaid(inv)} />
                       </td>
 
                       {/* Amount with dynamic currency */}

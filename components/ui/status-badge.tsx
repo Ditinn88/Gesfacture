@@ -7,9 +7,11 @@ interface StatusBadgeProps {
   status: InvoiceStatusType;
   className?: string;
   size?: "sm" | "md";
+  // Facture envoyée ou en retard dont le client a déjà payé une partie (voir isPartiallyPaid)
+  partial?: boolean;
 }
 
-export function StatusBadge({ status, className, size = "md" }: StatusBadgeProps) {
+export function StatusBadge({ status, className, size = "md", partial = false }: StatusBadgeProps) {
   // Flat pastel rounded-full pills (Notion / Modern SaaS style)
   // Perfectly rounded with rounded-full, flat pastel background, zero blue tint
   const configs = {
@@ -35,7 +37,13 @@ export function StatusBadge({ status, className, size = "md" }: StatusBadgeProps
     },
   };
 
-  const current = configs[status] || configs.brouillon;
+  const current = partial
+    ? {
+        label: "Payée en partie",
+        containerClass:
+          "bg-[#f3faf5] text-[#137333] border border-dashed border-[#a8dab5] dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-700/60 font-medium",
+      }
+    : configs[status] || configs.brouillon;
 
   return (
     <span

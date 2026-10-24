@@ -36,6 +36,7 @@ import {
   joinParts,
   organizationHeaderLines,
   AVAILABLE_CURRENCIES,
+  paidAmountOf,
 } from "@/lib/utils";
 import { useData } from "@/lib/data-context";
 import { useAuth } from "@/lib/auth-context";
@@ -294,9 +295,14 @@ function CreateInvoiceContent() {
 
     setIsSubmitting(true);
 
-    // En édition, « Enregistrer » ne doit pas faire repasser une facture payée en « Envoyée »
+    // En édition, les acomptes déjà reçus sont conservés (plafonnés au nouveau total) et
+    // « Enregistrer » ne fait pas repasser en « Envoyée » une facture payée ou désormais soldée
+    const keptPaid =
+      editId && existingInvoice && status !== "brouillon" ? Math.min(totalTTC, paidAmountOf(existingInvoice)) : 0;
     const finalStatus: Invoice["status"] =
-      editId && status === "envoyee" && existingInvoice?.status === "payee" ? "payee" : status;
+      editId && status === "envoyee" && (existingInvoice?.status === "payee" || (keptPaid > 0 && keptPaid >= totalTTC))
+        ? "payee"
+        : status;
 
     const invoicePayload: Omit<Invoice, "id"> & { id?: string } = {
       id: editId || undefined,
@@ -318,7 +324,7 @@ function CreateInvoiceContent() {
       taxAmount,
       discountPercent: applyDiscount ? discountPercent : 0,
       amount: totalTTC,
-      paidAmount: finalStatus === "payee" ? totalTTC : 0,
+      paidAmount: finalStatus === "payee" ? totalTTC : keptPaid,
       status: finalStatus,
       paymentMethod,
       items,

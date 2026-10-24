@@ -1,5 +1,14 @@
 import { Invoice, Organization } from "@/lib/mock-data";
-import { formatFCFA, formatDate, getCurrencyLabel, getCurrencySymbol, organizationHeaderLines } from "@/lib/utils";
+import {
+  formatFCFA,
+  formatDate,
+  getCurrencyLabel,
+  getCurrencySymbol,
+  isPartiallyPaid,
+  organizationHeaderLines,
+  paidAmountOf,
+  remainingAmountOf,
+} from "@/lib/utils";
 
 /**
  * Generates official, clean A4 HTML markup for any invoice.
@@ -34,8 +43,11 @@ export function generateInvoiceHtml(invoice: Invoice, org: Organization): string
   const grossSubtotal = items.reduce((sum, it) => sum + (Number(it.total) || 0), 0);
   const discountAmount = discountPercent > 0 ? Math.max(0, grossSubtotal - subtotal) : 0;
 
-  const statusLabel =
-    invoice.status === "payee"
+  const partial = isPartiallyPaid(invoice);
+
+  const statusLabel = partial
+    ? "PAYÉE EN PARTIE"
+    : invoice.status === "payee"
       ? "PAYÉE"
       : invoice.status === "en_retard"
       ? "EN RETARD"
@@ -43,8 +55,9 @@ export function generateInvoiceHtml(invoice: Invoice, org: Organization): string
       ? "BROUILLON"
       : "ENVOYÉE";
 
-  const statusColor =
-    invoice.status === "payee"
+  const statusColor = partial
+    ? "background: #f3faf5; color: #137333; border: 1px dashed #a8dab5;"
+    : invoice.status === "payee"
       ? "background: #e6f4ea; color: #137333; border: 1px solid #ceead6;"
       : invoice.status === "en_retard"
       ? "background: #fce8e6; color: #c5221f; border: 1px solid #fad2cf;"
@@ -406,6 +419,18 @@ export function generateInvoiceHtml(invoice: Invoice, org: Organization): string
           <span style="text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px;">TOTAL TTC NET :</span>
           <span class="amount">${formatFCFA(totalAmount, activeCurrency)}</span>
         </div>
+        ${
+          partial
+            ? `<div class="totals-row" style="margin-top: 6px;">
+          <span>Déjà réglé :</span>
+          <span style="font-family: monospace; font-weight: 600;">${formatFCFA(paidAmountOf(invoice), activeCurrency)}</span>
+        </div>
+        <div class="totals-row" style="font-weight: 700; color: #171717;">
+          <span>RESTE À PAYER :</span>
+          <span style="font-family: monospace; font-weight: 800;">${formatFCFA(remainingAmountOf(invoice), activeCurrency)}</span>
+        </div>`
+            : ""
+        }
       </div>
     </div>
 

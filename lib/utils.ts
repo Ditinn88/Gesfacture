@@ -152,6 +152,33 @@ export function sumByCurrency(
   return Array.from(totals, ([currency, total]) => ({ currency, total })).sort((a, b) => b.total - a.total);
 }
 
+type PayableInvoice = { amount: number | string; paidAmount?: number | string; status: string };
+
+/**
+ * Montant réellement encaissé sur une facture : tout si elle est payée, rien si c'est un
+ * brouillon, sinon les acomptes déjà reçus (paiements partiels), plafonnés au total
+ */
+export function paidAmountOf(inv: PayableInvoice): number {
+  const amount = Number(inv.amount) || 0;
+  if (inv.status === "payee") return amount;
+  if (inv.status === "brouillon") return 0;
+  return Math.min(amount, Math.max(0, Number(inv.paidAmount) || 0));
+}
+
+/**
+ * Reste à payer sur une facture (total TTC moins les acomptes reçus)
+ */
+export function remainingAmountOf(inv: PayableInvoice): number {
+  return Math.max(0, (Number(inv.amount) || 0) - paidAmountOf(inv));
+}
+
+/**
+ * Vrai si le client a payé une partie de la facture, mais pas la totalité
+ */
+export function isPartiallyPaid(inv: PayableInvoice): boolean {
+  return inv.status !== "payee" && paidAmountOf(inv) > 0 && remainingAmountOf(inv) > 0;
+}
+
 /**
  * Date locale au format YYYY-MM-DD (toISOString() donnerait la date UTC, décalée selon le fuseau)
  */

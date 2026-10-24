@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { ArrowUpRight, Search, X } from "lucide-react";
 import { Invoice } from "@/lib/mock-data";
-import { formatCurrency, formatDate, cn } from "@/lib/utils";
+import { formatCurrency, formatDate, cn, isPartiallyPaid } from "@/lib/utils";
 import { StatusBadge, InvoiceStatusType } from "@/components/ui/status-badge";
 import { useSearch } from "@/lib/search-context";
 import { useData } from "@/lib/data-context";
@@ -179,7 +179,7 @@ export function RecentInvoices({
 
                     {/* Column 4: Statut (Rounded-full Flat Pastel Pills) */}
                     <td className="py-4 px-3 whitespace-nowrap text-center">
-                      <StatusBadge status={inv.status as InvoiceStatusType} size="sm" />
+                      <StatusBadge status={inv.status as InvoiceStatusType} size="sm" partial={isPartiallyPaid(inv)} />
                     </td>
 
                     {/* Column 5: Montant (Bold black text aligned right) */}

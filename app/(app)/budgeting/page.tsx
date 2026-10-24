@@ -7,6 +7,7 @@ import {
   formatCurrency,
   getCurrencySymbol,
   isInCurrency,
+  paidAmountOf,
   resolveInvoicesCurrency,
   sumByCurrency,
   toLocalYMD,
@@ -29,20 +30,21 @@ export default function BudgetingPage() {
     const lastMonth = toLocalYMD(new Date(now.getFullYear(), now.getMonth() - 1, 1)).slice(0, 7);
     const issued = invoices.filter((i) => i.status !== "brouillon");
     const listFor = (prefix: string, onlyPaid: boolean) =>
-      issued.filter((i) => i.issueDate.startsWith(prefix) && (!onlyPaid || i.status === "payee"));
-    const totalsOf = (list: Invoice[]) => (list.length ? sumByCurrency(list, currency) : []);
+      issued.filter((i) => i.issueDate.startsWith(prefix) && (!onlyPaid || paidAmountOf(i) > 0));
+    const totalsOf = (list: Invoice[], amountOf: (i: Invoice) => number = (i) => i.amount) =>
+      list.length ? sumByCurrency(list.map((i) => ({ amount: amountOf(i), currency: i.currency })), currency) : [];
     // Variation et taux : calculés dans la devise principale uniquement
-    const mainSum = (list: Invoice[]) =>
+    const mainSum = (list: Invoice[], amountOf: (i: Invoice) => number = (i) => i.amount) =>
       list
         .filter((i) => isInCurrency(i, currency, organization.currency || "XOF"))
-        .reduce((s, i) => s + i.amount, 0);
+        .reduce((s, i) => s + amountOf(i), 0);
 
     const thisList = listFor(thisMonth, false);
     const lastList = listFor(lastMonth, false);
     const collectedList = listFor(thisMonth, true);
     const invoicedThis = mainSum(thisList);
     const invoicedLast = mainSum(lastList);
-    const collectedThis = mainSum(collectedList);
+    const collectedThis = mainSum(collectedList, paidAmountOf);
     const variation = invoicedLast > 0 ? ((invoicedThis - invoicedLast) / invoicedLast) * 100 : null;
     const collectionRate = invoicedThis > 0 ? (collectedThis / invoicedThis) * 100 : null;
     const multiCurrency = new Set(issued.map((i) => i.currency || organization.currency || "XOF")).size > 1;
@@ -50,7 +52,7 @@ export default function BudgetingPage() {
     return {
       invoicedThis: totalsOf(thisList),
       invoicedLast: totalsOf(lastList),
-      collectedThis: totalsOf(collectedList),
+      collectedThis: totalsOf(collectedList, paidAmountOf),
       variation,
       collectionRate,
       multiCurrency,

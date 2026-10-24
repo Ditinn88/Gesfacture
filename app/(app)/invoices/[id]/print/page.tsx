@@ -11,6 +11,9 @@ import {
   getCurrencySymbol,
   joinParts,
   organizationHeaderLines,
+  isPartiallyPaid,
+  paidAmountOf,
+  remainingAmountOf,
 } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 
@@ -67,8 +70,11 @@ export default function InvoicePrintPage({
   const totalAmount = invoice.amount;
   const currency = invoice.currency || organization.currency;
 
-  const statusLabel =
-    invoice.status === "payee"
+  const partial = isPartiallyPaid(invoice);
+
+  const statusLabel = partial
+    ? "PAYÉE EN PARTIE"
+    : invoice.status === "payee"
       ? "PAYÉE"
       : invoice.status === "en_retard"
       ? "EN RETARD"
@@ -225,6 +231,18 @@ export default function InvoicePrintPage({
                 {formatFCFA(totalAmount, currency)}
               </span>
             </div>
+            {partial && (
+              <>
+                <div className="flex justify-between text-neutral-600">
+                  <span>Déjà réglé :</span>
+                  <span className="font-mono font-medium">{formatFCFA(paidAmountOf(invoice), currency)}</span>
+                </div>
+                <div className="flex justify-between font-bold text-neutral-900">
+                  <span>Reste à payer :</span>
+                  <span className="font-mono">{formatFCFA(remainingAmountOf(invoice), currency)}</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
 

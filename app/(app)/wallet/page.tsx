@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import Link from "next/link";
 import { Wallet, ArrowUpRight } from "lucide-react";
 import { useData } from "@/lib/data-context";
-import { resolveInvoicesCurrency, sumByCurrency } from "@/lib/utils";
+import { paidAmountOf, resolveInvoicesCurrency, sumByCurrency } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CurrencyTotals } from "@/components/ui/currency-totals";
 
@@ -27,10 +27,13 @@ export default function WalletPage() {
   };
 
   const totals = useMemo(() => {
-    const paid = invoices.filter((i) => i.status === "payee");
+    const paid = invoices.filter((i) => paidAmountOf(i) > 0);
     return METHODS.map((method) => {
       const list = paid.filter((i) => i.paymentMethod === method);
-      return { method, count: list.length, totals: list.length ? sumByCurrency(list, currency) : [] };
+      const totals = list.length
+        ? sumByCurrency(list.map((i) => ({ amount: paidAmountOf(i), currency: i.currency })), currency)
+        : [];
+      return { method, count: list.length, totals };
     });
   }, [invoices, currency]);
 

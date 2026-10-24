@@ -19,6 +19,7 @@ import {
   Calendar,
   Share2,
   Check,
+  Wallet,
 } from "lucide-react";
 import {
   formatFCFA,
@@ -28,11 +29,15 @@ import {
   getCurrencySymbol,
   joinParts,
   organizationHeaderLines,
+  isPartiallyPaid,
+  paidAmountOf,
+  remainingAmountOf,
 } from "@/lib/utils";
 import { StatusBadge, InvoiceStatusType } from "@/components/ui/status-badge";
 import { useData } from "@/lib/data-context";
 import { useAuth } from "@/lib/auth-context";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { RecordPaymentModal } from "@/components/ui/record-payment-modal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { printInvoice, downloadInvoicePdf } from "@/lib/print-invoice";
 
@@ -42,7 +47,7 @@ export default function InvoiceDetailPage({
   params: { id: string };
 }) {
   const router = useRouter();
-  const { invoices, updateInvoiceStatus, deleteInvoice, organization, isLoading } = useData();
+  const { invoices, updateInvoiceStatus, recordPayment, deleteInvoice, organization, isLoading } = useData();
   const { user } = useAuth();
 
   // Find invoice from data context
@@ -53,6 +58,7 @@ export default function InvoiceDetailPage({
 
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
@@ -116,6 +122,21 @@ export default function InvoiceDetailPage({
   const currency = invoice.currency || organization.currency;
 
   const statusLabels = { brouillon: "Brouillon", envoyee: "Envoyée", payee: "Payée", en_retard: "En retard" };
+  const partial = isPartiallyPaid(invoice);
+  const paid = paidAmountOf(invoice);
+  const remaining = remainingAmountOf(invoice);
+
+  const handleRecordPayment = (amount: number) => {
+    const updated = recordPayment(invoice.id, amount);
+    setPaymentModalOpen(false);
+    if (!updated) return;
+    setToastMessage(
+      updated.status === "payee"
+        ? `Paiement de ${formatFCFA(amount, currency)} enregistré : facture soldée.`
+        : `Paiement de ${formatFCFA(amount, currency)} enregistré. Reste à payer : ${formatFCFA(remainingAmountOf(updated), currency)}.`
+    );
+    setTimeout(() => setToastMessage(null), 4000);
+  };
 
   const handleStatusChange = (newStatus: "brouillon" | "envoyee" | "payee" | "en_retard") => {
     updateInvoiceStatus(invoice.id, newStatus);
@@ -159,7 +180,7 @@ export default function InvoiceDetailPage({
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-white font-mono">
                 {invoice.number}
               </h1>
-              <StatusBadge status={invoice.status as InvoiceStatusType} />
+              <StatusBadge status={invoice.status as InvoiceStatusType} partial={partial} />
               <span className="px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700">
                 {invoice.currency || "FCFA"}
               </span>
@@ -255,6 +276,18 @@ export default function InvoiceDetailPage({
               </div>
             )}
           </div>
+
+          {/* Paiement partiel ou total, enregistré sur cette même facture */}
+          {invoice.status !== "payee" && (
+            <button
+              type="button"
+              onClick={() => setPaymentModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-2 text-xs font-medium text-neutral-800 dark:text-neutral-200 bg-white dark:bg-neutral-800 hover:bg-neutral-900 hover:text-white dark:hover:bg-white dark:hover:text-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-none transition-all"
+            >
+              <Wallet className="w-3.5 h-3.5" />
+              <span>Enregistrer un paiement</span>
+            </button>
+          )}
 
           {/* Edit Button */}
           <Link
@@ -377,7 +410,7 @@ export default function InvoiceDetailPage({
             <p>
               <span className="text-neutral-400">Statut comptable : </span>
               <span className="font-semibold text-neutral-800 dark:text-neutral-200">
-                {statusLabels[invoice.status]}
+                {partial ? `${statusLabels[invoice.status]} · payée en partie` : statusLabels[invoice.status]}
               </span>
             </p>
           </div>
@@ -434,8 +467,14 @@ export default function InvoiceDetailPage({
             </div>
             <div className="flex justify-between text-[11px] text-neutral-400 pt-0.5">
               <span>Montant Déjà Réglé :</span>
-              <span className="font-mono">{formatFCFA(invoice.paidAmount, currency)}</span>
+              <span className="font-mono">{formatFCFA(paid, currency)}</span>
             </div>
+            {invoice.status !== "brouillon" && remaining > 0 && (
+              <div className="flex justify-between text-xs font-bold text-neutral-900 dark:text-white">
+                <span>Reste à payer :</span>
+                <span className="font-mono">{formatFCFA(remaining, currency)}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -479,6 +518,12 @@ export default function InvoiceDetailPage({
           </div>
         </div>
       </div>
+
+      <RecordPaymentModal
+        invoice={paymentModalOpen ? invoice : null}
+        onClose={() => setPaymentModalOpen(false)}
+        onConfirm={handleRecordPayment}
+      />
 
       {/* Reusable Delete Confirmation Modal */}
       <ConfirmModal

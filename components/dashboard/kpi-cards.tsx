@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import Link from "next/link";
 import { Invoice, Client } from "@/lib/mock-data";
-import { resolveInvoicesCurrency, sumByCurrency } from "@/lib/utils";
+import { paidAmountOf, remainingAmountOf, resolveInvoicesCurrency, sumByCurrency } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CurrencyTotals } from "@/components/ui/currency-totals";
 import { useData } from "@/lib/data-context";
@@ -29,21 +29,32 @@ export function KpiCards({
   }, [invoices, organization?.currency]);
 
   // Montants regroupés par devise : jamais de GNF additionnés à des FCFA
-  const paidInvoices = invoices.filter((i) => i.status === "payee");
+  // Encaissé = factures payées + acomptes des factures payées en partie ; en attente et en retard = reste dû
+  const paidInvoices = invoices.filter((i) => paidAmountOf(i) > 0);
+  const fullyPaidCount = paidInvoices.filter((i) => i.status === "payee").length;
+  const partialCount = paidInvoices.length - fullyPaidCount;
   const pendingInvoices = invoices.filter((i) => i.status === "envoyee");
   const overdueInvoices = invoices.filter((i) => i.status === "en_retard");
-  const totalsOf = (list: Invoice[]) => (
-    <CurrencyTotals totals={list.length ? sumByCurrency(list, activeCurrency) : []} fallbackCurrency={activeCurrency} />
+  const totalsOf = (list: Invoice[], amountOf: (i: Invoice) => number) => (
+    <CurrencyTotals
+      totals={list.length ? sumByCurrency(list.map((i) => ({ amount: amountOf(i), currency: i.currency })), activeCurrency) : []}
+      fallbackCurrency={activeCurrency}
+    />
   );
 
   const cards = [
     {
       title: "Total Encaissé",
-      amount: totalsOf(paidInvoices),
-      // Seules les factures « Payée » comptent : sans encaissement, on indique où les marquer payées
+      amount: totalsOf(paidInvoices, paidAmountOf),
+      // Sans aucun encaissement, on indique où marquer les factures payées
       subtitle:
         paidInvoices.length > 0 ? (
-          `${paidInvoices.length} ${paidInvoices.length > 1 ? "factures réglées" : "facture réglée"}`
+          [
+            fullyPaidCount > 0 && `${fullyPaidCount} ${fullyPaidCount > 1 ? "factures réglées" : "facture réglée"}`,
+            partialCount > 0 && `${partialCount} payée${partialCount > 1 ? "s" : ""} en partie`,
+          ]
+            .filter(Boolean)
+            .join(" · ")
         ) : pendingInvoices.length + overdueInvoices.length > 0 ? (
           <Link href="/payments" className="underline underline-offset-2 hover:text-neutral-900 dark:hover:text-white">
             Aucune facture payée • marquez-les payées dans Paiements
@@ -71,7 +82,7 @@ export function KpiCards({
     },
     {
       title: "Factures en Attente",
-      amount: totalsOf(pendingInvoices),
+      amount: totalsOf(pendingInvoices, remainingAmountOf),
       subtitle:
         pendingInvoices.length > 0
           ? `${pendingInvoices.length} ${pendingInvoices.length > 1 ? "factures envoyées" : "facture envoyée"}`
@@ -98,7 +109,7 @@ export function KpiCards({
     },
     {
       title: "En Retard",
-      amount: totalsOf(overdueInvoices),
+      amount: totalsOf(overdueInvoices, remainingAmountOf),
       subtitle:
         overdueInvoices.length > 0
           ? `${overdueInvoices.length} ${overdueInvoices.length > 1 ? "factures en retard" : "facture en retard"}`

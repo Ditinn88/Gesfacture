@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import { Download, Receipt, Clock, AlertTriangle } from "lucide-react";
 import { useData } from "@/lib/data-context";
-import { formatDate, resolveInvoicesCurrency, sumByCurrency, toLocalYMD } from "@/lib/utils";
+import { formatDate, paidAmountOf, remainingAmountOf, resolveInvoicesCurrency, sumByCurrency, toLocalYMD } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CurrencyTotals } from "@/components/ui/currency-totals";
 import { Invoice } from "@/lib/mock-data";
@@ -51,7 +51,7 @@ export default function ReportsPage() {
     const notDue = unpaid.filter((i) => i.dueDate >= today);
     const late0to30 = unpaid.filter((i) => i.dueDate < today && daysLate(i) <= 30);
     const late30plus = unpaid.filter((i) => i.dueDate < today && daysLate(i) > 30);
-    const sum = (list: Invoice[]) => totalsBy(list, (i) => i.amount - (i.paidAmount || 0));
+    const sum = (list: Invoice[]) => totalsBy(list, remainingAmountOf);
 
     return {
       vatCollectedMonth,
@@ -88,7 +88,7 @@ export default function ReportsPage() {
       i.taxRate ?? "",
       i.taxAmount ?? "",
       i.amount,
-      i.paidAmount || 0,
+      paidAmountOf(i),
       i.currency || organization.currency || "XOF",
       i.paymentMethod || "",
     ]);

@@ -13,7 +13,7 @@ import {
 } from "@/lib/mock-data";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
-import { sumByCurrency, toLocalYMD } from "@/lib/utils";
+import { paidAmountOf, sumByCurrency, toLocalYMD } from "@/lib/utils";
 
 interface DataContextType {
   invoices: Invoice[];
@@ -28,6 +28,7 @@ interface DataContextType {
   deleteInvoice: (id: string) => boolean;
   getInvoice: (id: string) => Invoice | undefined;
   updateInvoiceStatus: (id: string, status: Invoice["status"]) => void;
+  recordPayment: (id: string, amount: number) => Invoice | undefined;
   addClient: (clientData: Omit<Client, "id"> & { id?: string }) => Client;
   updateClient: (id: string, updates: Partial<Client>) => void;
   deleteClient: (id: string) => boolean;
@@ -603,10 +604,29 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const updateInvoiceStatus = (id: string, status: Invoice["status"]) => {
     const current = getInvoice(id);
-    updateInvoice(id, {
-      status,
-      paidAmount: status === "payee" ? current?.amount || 0 : 0,
-    });
+    // « Payée » solde la facture ; repasser une facture payée (ou en brouillon) efface l'encaissement ;
+    // entre « Envoyée » et « En retard », les acomptes déjà reçus sont conservés
+    const paidAmount =
+      status === "payee"
+        ? current?.amount || 0
+        : status === "brouillon" || current?.status === "payee"
+        ? 0
+        : current
+        ? paidAmountOf(current)
+        : 0;
+    updateInvoice(id, { status, paidAmount });
+  };
+
+  // Paiement partiel : l'acompte s'ajoute à la même facture, qui passe en « Payée » une fois soldée
+  const recordPayment = (id: string, amount: number): Invoice | undefined => {
+    const current = getInvoice(id);
+    if (!current || !(amount > 0)) return undefined;
+    const paidAmount = Math.min(current.amount, paidAmountOf(current) + amount);
+    const status: Invoice["status"] =
+      paidAmount >= current.amount ? "payee" : current.status === "brouillon" ? "envoyee" : current.status;
+    // Statut inchangé (dont « En retard », dérivé de l'échéance) : seul le montant payé est écrit
+    updateInvoice(id, status === current.status ? { paidAmount } : { paidAmount, status });
+    return { ...current, paidAmount, status };
   };
 
   // CRUD Clients
@@ -727,6 +747,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         deleteInvoice,
         getInvoice,
         updateInvoiceStatus,
+        recordPayment,
         addClient,
         updateClient,
         deleteClient,
