@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { ArrowUpRight, Search, X } from "lucide-react";
 import { Invoice } from "@/lib/mock-data";
-import { formatFCFA, formatDate, cn } from "@/lib/utils";
+import { formatCurrency, formatDate, cn } from "@/lib/utils";
 import { StatusBadge, InvoiceStatusType } from "@/components/ui/status-badge";
 import { useSearch } from "@/lib/search-context";
 import { useData } from "@/lib/data-context";
@@ -26,7 +26,7 @@ export function RecentInvoices({
 }: RecentInvoicesProps) {
   const router = useRouter();
   const { searchQuery, setSearchQuery } = useSearch();
-  const { invoices: contextInvoices } = useData();
+  const { invoices: contextInvoices, organization } = useData();
 
   const sourceInvoices = propInvoices ?? contextInvoices;
 
@@ -36,7 +36,7 @@ export function RecentInvoices({
     return (
       inv.number.toLowerCase().includes(query) ||
       inv.client.name.toLowerCase().includes(query) ||
-      inv.client.email.toLowerCase().includes(query) ||
+      inv.client.email?.toLowerCase().includes(query) ||
       inv.amount.toString().includes(query)
     );
   });
@@ -184,7 +184,7 @@ export function RecentInvoices({
 
                     {/* Column 5: Montant (Bold black text aligned right) */}
                     <td className="py-4 pl-3 pr-6 text-right whitespace-nowrap font-bold text-neutral-900 dark:text-white text-xs">
-                      {formatFCFA(inv.amount)}
+                      {formatCurrency(inv.amount, inv.currency || organization?.currency)}
                     </td>
                   </tr>
                 );

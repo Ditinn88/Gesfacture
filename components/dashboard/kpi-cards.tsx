@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { Invoice, Client } from "@/lib/mock-data";
-import { formatFCFA } from "@/lib/utils";
+import { formatCurrency, resolveInvoicesCurrency } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useData } from "@/lib/data-context";
 
@@ -17,9 +17,14 @@ export function KpiCards({
   invoices: propInvoices,
   clients: propClients,
 }: KpiCardsProps) {
-  const { invoices: contextInvoices, clients: contextClients } = useData();
+  const { invoices: contextInvoices, clients: contextClients, organization } = useData();
   const invoices = propInvoices ?? contextInvoices;
   const clients = propClients ?? contextClients;
+
+  // Resolve active currency (GNF, XOF, EUR, etc.) based on invoices or organization setting
+  const activeCurrency = useMemo(() => {
+    return resolveInvoicesCurrency(invoices, organization?.currency || "XOF");
+  }, [invoices, organization?.currency]);
 
   // Dynamic calculations from context
   const totalCollected = invoices
@@ -35,7 +40,7 @@ export function KpiCards({
   const cards = [
     {
       title: "Total Encaissé",
-      amount: formatFCFA(totalCollected),
+      amount: formatCurrency(totalCollected, activeCurrency),
       subtitle:
         totalCollected > 0
           ? `${invoices.filter((i) => i.status === "payee").length} factures réglées`
@@ -60,7 +65,7 @@ export function KpiCards({
     },
     {
       title: "Factures en Attente",
-      amount: formatFCFA(pendingAmount),
+      amount: formatCurrency(pendingAmount, activeCurrency),
       subtitle:
         pendingInvoices.length > 0
           ? `${pendingInvoices.length} ${pendingInvoices.length > 1 ? "factures envoyées" : "facture envoyée"}`
@@ -87,7 +92,7 @@ export function KpiCards({
     },
     {
       title: "En Retard",
-      amount: formatFCFA(overdueAmount),
+      amount: formatCurrency(overdueAmount, activeCurrency),
       subtitle:
         overdueInvoices.length > 0
           ? `${overdueInvoices.length} ${overdueInvoices.length > 1 ? "factures en retard" : "facture en retard"}`

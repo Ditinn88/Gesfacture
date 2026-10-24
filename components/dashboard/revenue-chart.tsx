@@ -12,7 +12,7 @@ import {
 } from "recharts";
 import { useTheme } from "next-themes";
 import { useData } from "@/lib/data-context";
-import { formatFCFA } from "@/lib/utils";
+import { formatCurrency, getCurrencySymbol, resolveInvoicesCurrency } from "@/lib/utils";
 import { TrendingUp, Layers, CheckCircle } from "lucide-react";
 
 const MONTH_NAMES = [
@@ -23,7 +23,11 @@ const MONTH_NAMES = [
 export function RevenueChart() {
   const [mounted, setMounted] = useState(false);
   const { theme, resolvedTheme } = useTheme();
-  const { invoices, clients } = useData();
+  const { invoices, clients, organization } = useData();
+
+  const activeCurrency = useMemo(() => {
+    return resolveInvoicesCurrency(invoices, organization?.currency || "XOF");
+  }, [invoices, organization?.currency]);
 
   useEffect(() => {
     setMounted(true);
@@ -108,7 +112,7 @@ export function RevenueChart() {
                 Facturé :
               </span>
               <span className="font-bold text-neutral-900 dark:text-white">
-                {formatFCFA(payload[0]?.value || 0)}
+                {formatCurrency(payload[0]?.value || 0, activeCurrency)}
               </span>
             </div>
             <div className="flex items-center justify-between gap-4">
@@ -117,7 +121,7 @@ export function RevenueChart() {
                 Encaissé :
               </span>
               <span className="font-bold text-neutral-900 dark:text-white">
-                {formatFCFA(payload[1]?.value || 0)}
+                {formatCurrency(payload[1]?.value || 0, activeCurrency)}
               </span>
             </div>
           </div>
@@ -140,16 +144,16 @@ export function RevenueChart() {
               {totalInvoiced > 0 ? (
                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#137333] dark:text-emerald-300 bg-[#e6f4ea] dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-[#ceead6]/60">
                   <TrendingUp className="w-3 h-3" />
-                  {formatFCFA(totalCollected)} encaissé
+                  {formatCurrency(totalCollected, activeCurrency)} encaissé
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 text-[11px] font-medium text-neutral-500 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-full border border-neutral-200 dark:border-neutral-700">
-                  0 FCFA facturé
+                  {formatCurrency(0, activeCurrency)} facturé
                 </span>
               )}
             </div>
             <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
-              Comparatif mensuel des montants facturés vs réels encaissés (FCFA)
+              Comparatif mensuel des montants facturés vs réels encaissés ({getCurrencySymbol(activeCurrency)})
             </p>
           </div>
 
@@ -255,7 +259,7 @@ export function RevenueChart() {
                       {client.name}
                     </span>
                     <span className="font-bold text-neutral-900 dark:text-white">
-                      {formatFCFA(client.totalInvoiced || 0)}
+                      {formatCurrency(client.totalInvoiced || 0, activeCurrency)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-[11px] text-neutral-400">

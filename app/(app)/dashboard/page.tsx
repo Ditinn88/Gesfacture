@@ -10,9 +10,10 @@ import { useData } from "@/lib/data-context";
 import { LogIn, Sparkles } from "lucide-react";
 
 export default function DashboardPage() {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isSkeletonPreview, setIsSkeletonPreview] = useState<boolean>(false);
   const { user, openAuthModal } = useAuth();
-  const { invoices } = useData();
+  const { invoices, isLoading: isDataLoading, isCloudSynced } = useData();
+  const isLoading = isDataLoading || isSkeletonPreview;
 
   const [dateRange, setDateRange] = useState<DateRange>({
     preset: "all",
@@ -52,7 +53,9 @@ export default function DashboardPage() {
           </div>
           <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
             {user
-              ? `Connecté avec ${user.email} • Données synchronisées avec Supabase`
+              ? `Connecté avec ${user.email} • ${
+                  isCloudSynced ? "Données synchronisées avec Supabase" : "Données enregistrées sur cet appareil"
+                }`
               : "Espace local • Connectez-vous pour rattacher vos factures à votre compte"}
           </p>
         </div>
@@ -73,11 +76,11 @@ export default function DashboardPage() {
 
           {/* Skeleton Loader Tester button */}
           <button
-            onClick={() => setIsLoading(!isLoading)}
+            onClick={() => setIsSkeletonPreview(!isSkeletonPreview)}
             className="text-[11px] font-medium text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 px-2 py-1.5 rounded border border-transparent hover:border-neutral-200 dark:hover:border-neutral-800 transition-colors hidden md:inline-flex"
             title="Cliquez pour basculer entre le skeleton loader et les données réelles"
           >
-            {isLoading ? "Mode Données" : "Tester Skeletons"}
+            {isSkeletonPreview ? "Mode Données" : "Tester Skeletons"}
           </button>
         </div>
       </div>

@@ -65,7 +65,7 @@ export default function SettingsPage() {
   const [country, setCountry] = useState(organization.country);
   const [phone, setPhone] = useState(organization.phone);
   const [companyEmail, setCompanyEmail] = useState(organization.email);
-  const [website, setWebsite] = useState(organization.website || "https://gesfacture.sn");
+  const [website, setWebsite] = useState(organization.website || "");
 
   // Synchronize when organization changes
   React.useEffect(() => {
@@ -93,14 +93,14 @@ export default function SettingsPage() {
     if (organization.bankSwift !== undefined) setBankSwift(organization.bankSwift || "");
     if (organization.invoicePrefix) setInvoicePrefix(organization.invoicePrefix);
     if (organization.paymentDelay) setPaymentTermsDays(organization.paymentDelay);
-    if (organization.defaultVatRate) setDefaultTaxRate(organization.defaultVatRate);
+    // !== undefined : une TVA à 0 % (exonération) doit aussi être reprise
+    if (organization.defaultVatRate !== undefined) setDefaultTaxRate(organization.defaultVatRate);
   }, [organization]);
 
   // --- SECTION 2: Modèle de Facture & Taxes ---
   const [currency, setCurrency] = useState(organization.currency || "XOF");
   const [defaultTaxRate, setDefaultTaxRate] = useState<number>(organization.defaultVatRate ?? 18);
   const [invoicePrefix, setInvoicePrefix] = useState(organization.invoicePrefix || "FAC-2026-");
-  const [nextNumber, setNextNumber] = useState("2026-0042");
   const [paymentTermsDays, setPaymentTermsDays] = useState<number>(organization.paymentDelay ?? 15);
   const [footerNotes, setFooterNotes] = useState(
     "Facture payable à réception ou sous 15 jours. En cas de retard, des pénalités au taux légal OHADA seront exigées."
@@ -122,7 +122,19 @@ export default function SettingsPage() {
   const [smsPaymentReceipt, setSmsPaymentReceipt] = useState(false);
 
   // --- SECTION 5: Sécurité & Administrateur ---
-  const { user, updateUserProfile } = useAuth();
+  const { user, session, updateUserProfile, resetPasswordForEmail } = useAuth();
+  const [isSendingReset, setIsSendingReset] = useState(false);
+
+  const handlePasswordReset = async () => {
+    if (!user?.email) return;
+    setIsSendingReset(true);
+    const { error } = await resetPasswordForEmail(user.email);
+    setIsSendingReset(false);
+    setToastMessage(
+      error ? error.message : `Un lien de réinitialisation a été envoyé à ${user.email}.`
+    );
+    setTimeout(() => setToastMessage(null), 4000);
+  };
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const [userRole, setUserRole] = useState("Directeur Général");
@@ -507,14 +519,15 @@ export default function SettingsPage() {
                         Logo de Facturation
                       </p>
                       <p className="text-[10px] text-neutral-400 truncate">
-                        PNG, SVG ou JPG (format carré, max 2 Mo)
+                        Bientôt disponible : PNG, SVG ou JPG (format carré, max 2 Mo)
                       </p>
                     </div>
                   </div>
                   <button
                     type="button"
-                    onClick={() => alert("Sélecteur de fichier logo ouvert")}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-neutral-800 dark:text-neutral-200 bg-white dark:bg-neutral-800 hover:bg-neutral-900 hover:text-white dark:hover:bg-white dark:hover:text-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-xl transition-all shadow-none shrink-0"
+                    disabled
+                    title="L'import de logo sera bientôt disponible"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-neutral-800 dark:text-neutral-200 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl shadow-none shrink-0 opacity-40 cursor-not-allowed"
                   >
                     <Upload className="w-3.5 h-3.5" />
                     <span>Modifier</span>
@@ -679,11 +692,13 @@ export default function SettingsPage() {
                     <label className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200 mb-1.5">
                       Devise Principale du Compte
                     </label>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {[
-                        { code: "XOF", label: "Franc CFA (XOF)" },
-                        { code: "EUR", label: "Euro (€)" },
-                        { code: "USD", label: "Dollar ($)" },
+                        { code: "GNF", label: "GNF (Guinée)" },
+                        { code: "XOF", label: "XOF (UEMOA / FCFA)" },
+                        { code: "XAF", label: "XAF (CEMAC / FCFA)" },
+                        { code: "EUR", label: "EUR (€)" },
+                        { code: "USD", label: "USD ($)" },
                       ].map((curr) => (
                         <button
                           key={curr.code}
@@ -696,7 +711,8 @@ export default function SettingsPage() {
                               : "bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700 hover:border-neutral-400"
                           )}
                         >
-                          {curr.code}
+                          <span className="font-bold">{curr.code}</span>
+                          <span className="block text-[10px] font-normal opacity-75">{curr.label}</span>
                         </button>
                       ))}
                     </div>
@@ -1243,14 +1259,17 @@ export default function SettingsPage() {
                         Mot de passe et Clés d&apos;accès
                       </p>
                       <p className="text-[11px] text-neutral-400">
-                        Dernière modification : il y a 14 jours
+                        {session
+                          ? "Un lien de réinitialisation sera envoyé à votre adresse email"
+                          : "Disponible avec un compte Supabase connecté"}
                       </p>
                     </div>
                   </div>
                   <button
                     type="button"
-                    onClick={() => alert("Un email de réinitialisation sécurisé a été expédié à votre adresse.")}
-                    className="w-full sm:w-auto px-3.5 py-2 text-xs font-semibold text-neutral-800 dark:text-neutral-200 bg-white dark:bg-neutral-800 hover:bg-neutral-900 hover:text-white dark:hover:bg-white dark:hover:text-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-xl transition-all shadow-none text-center"
+                    disabled={!session || isSendingReset}
+                    onClick={handlePasswordReset}
+                    className="w-full sm:w-auto px-3.5 py-2 text-xs font-semibold text-neutral-800 dark:text-neutral-200 bg-white dark:bg-neutral-800 hover:bg-neutral-900 hover:text-white dark:hover:bg-white dark:hover:text-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-xl transition-all shadow-none text-center disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-neutral-800"
                   >
                     Changer le mot de passe
                   </button>

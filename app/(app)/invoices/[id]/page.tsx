@@ -20,11 +20,20 @@ import {
   Share2,
   Check,
 } from "lucide-react";
-import { formatFCFA, formatDate, cn } from "@/lib/utils";
+import {
+  formatFCFA,
+  formatDate,
+  cn,
+  getCurrencyLabel,
+  getCurrencySymbol,
+  joinParts,
+  organizationHeaderLines,
+} from "@/lib/utils";
 import { StatusBadge, InvoiceStatusType } from "@/components/ui/status-badge";
 import { useData } from "@/lib/data-context";
 import { useAuth } from "@/lib/auth-context";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { Skeleton } from "@/components/ui/skeleton";
 import { printInvoice, downloadInvoicePdf } from "@/lib/print-invoice";
 
 export default function InvoiceDetailPage({
@@ -33,7 +42,7 @@ export default function InvoiceDetailPage({
   params: { id: string };
 }) {
   const router = useRouter();
-  const { invoices, updateInvoiceStatus, deleteInvoice, organization } = useData();
+  const { invoices, updateInvoiceStatus, deleteInvoice, organization, isLoading } = useData();
   const { user } = useAuth();
 
   // Find invoice from data context
@@ -63,6 +72,15 @@ export default function InvoiceDetailPage({
       setTimeout(() => setToastMessage(null), 4000);
     }
   };
+
+  if (isLoading && !invoice) {
+    return (
+      <div className="space-y-6 max-w-4xl mx-auto">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-[480px] rounded-2xl" />
+      </div>
+    );
+  }
 
   if (!invoice) {
     return (
@@ -95,11 +113,14 @@ export default function InvoiceDetailPage({
 
   const subtotal = invoice.subtotal || Math.round(invoice.amount / 1.18);
   const taxAmount = invoice.taxAmount || (invoice.amount - subtotal);
+  const currency = invoice.currency || organization.currency;
+
+  const statusLabels = { brouillon: "Brouillon", envoyee: "Envoyée", payee: "Payée", en_retard: "En retard" };
 
   const handleStatusChange = (newStatus: "brouillon" | "envoyee" | "payee" | "en_retard") => {
     updateInvoiceStatus(invoice.id, newStatus);
     setStatusMenuOpen(false);
-    setToastMessage(`Statut de la facture mis à jour : ${newStatus.toUpperCase()}`);
+    setToastMessage(`Statut de la facture mis à jour : ${statusLabels[newStatus]}`);
     setTimeout(() => setToastMessage(null), 3000);
   };
 
@@ -295,15 +316,11 @@ export default function InvoiceDetailPage({
                 </p>
               </div>
             </div>
-            <p className="text-xs text-neutral-500 mt-1">
-              {organization.address}, {organization.city} · {organization.country}
-            </p>
-            <p className="text-xs text-neutral-400 font-mono">
-              {organization.taxId} · RCCM {organization.rccm}
-            </p>
-            <p className="text-xs text-neutral-400">
-              Tél : {organization.phone} · Email : {organization.email}
-            </p>
+            {organizationHeaderLines(organization).map((line, i) => (
+              <p key={i} className={cn("text-xs", i === 0 ? "text-neutral-500 mt-1" : "text-neutral-400")}>
+                {line}
+              </p>
+            ))}
           </div>
 
           <div className="sm:text-right space-y-1">
@@ -313,7 +330,7 @@ export default function InvoiceDetailPage({
             <p className="text-sm font-mono font-bold text-neutral-700 dark:text-neutral-300">
               {invoice.number}
             </p>
-            <p className="text-xs text-neutral-400">Devise : FCFA (XOF)</p>
+            <p className="text-xs text-neutral-400">Devise : {getCurrencyLabel(currency)}</p>
           </div>
         </div>
 
@@ -328,8 +345,7 @@ export default function InvoiceDetailPage({
             </h3>
             <p className="text-neutral-500 mt-0.5">{invoice.client.email}</p>
             <p className="text-neutral-500">
-              {invoice.client.address ? `${invoice.client.address}, ` : ""}
-              {invoice.client.city}, {invoice.client.country}
+              {joinParts([invoice.client.address, invoice.client.city, invoice.client.country], ", ")}
             </p>
             {invoice.client.phone && (
               <p className="text-neutral-400 font-mono mt-0.5">{invoice.client.phone}</p>
@@ -357,8 +373,8 @@ export default function InvoiceDetailPage({
             </p>
             <p>
               <span className="text-neutral-400">Statut comptable : </span>
-              <span className="font-semibold capitalize text-neutral-800 dark:text-neutral-200">
-                {invoice.status}
+              <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                {statusLabels[invoice.status]}
               </span>
             </p>
           </div>
@@ -372,7 +388,7 @@ export default function InvoiceDetailPage({
                 <th className="py-3 px-4">Description</th>
                 <th className="py-3 px-3 text-center">Qté</th>
                 <th className="py-3 px-3 text-right">Prix Unitaire HT</th>
-                <th className="py-3 px-4 text-right">Total HT (FCFA)</th>
+                <th className="py-3 px-4 text-right">Total HT ({getCurrencySymbol(currency)})</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
@@ -385,10 +401,10 @@ export default function InvoiceDetailPage({
                     {item.quantity}
                   </td>
                   <td className="py-3.5 px-3 text-right text-neutral-500 font-mono">
-                    {formatFCFA(item.unitPrice)}
+                    {formatFCFA(item.unitPrice, currency)}
                   </td>
                   <td className="py-3.5 px-4 text-right font-bold text-neutral-900 dark:text-white font-mono">
-                    {formatFCFA(item.total)}
+                    {formatFCFA(item.total, currency)}
                   </td>
                 </tr>
               ))}
@@ -401,21 +417,21 @@ export default function InvoiceDetailPage({
           <div className="w-full sm:w-80 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/60 dark:border-neutral-700/60 space-y-2 text-xs">
             <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
               <span>Sous-total Brut HT :</span>
-              <span className="font-mono font-medium">{formatFCFA(subtotal)}</span>
+              <span className="font-mono font-medium">{formatFCFA(subtotal, currency)}</span>
             </div>
             <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
               <span>TVA ({invoice.taxRate ?? 18}%) :</span>
-              <span className="font-mono font-medium">{formatFCFA(taxAmount)}</span>
+              <span className="font-mono font-medium">{formatFCFA(taxAmount, currency)}</span>
             </div>
             <div className="pt-2.5 border-t border-neutral-200 dark:border-neutral-700 flex justify-between items-baseline font-bold text-neutral-900 dark:text-white">
               <span className="text-xs uppercase tracking-wide">Total TTC Net :</span>
               <span className="font-extrabold font-mono text-base sm:text-lg text-neutral-900 dark:text-white">
-                {formatFCFA(invoice.amount)}
+                {formatFCFA(invoice.amount, currency)}
               </span>
             </div>
             <div className="flex justify-between text-[11px] text-neutral-400 pt-0.5">
               <span>Montant Déjà Réglé :</span>
-              <span className="font-mono">{formatFCFA(invoice.paidAmount)}</span>
+              <span className="font-mono">{formatFCFA(invoice.paidAmount, currency)}</span>
             </div>
           </div>
         </div>
@@ -448,7 +464,7 @@ export default function InvoiceDetailPage({
                 : (invoice.paymentMethod || "Règlement direct")}
             </p>
             <p className="text-[10px] text-neutral-400 font-mono">
-              {organization.legalName} · {organization.city}, {organization.country}
+              {joinParts([organization.legalName, joinParts([organization.city, organization.country], ", ")])}
             </p>
           </div>
 

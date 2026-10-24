@@ -1,5 +1,5 @@
 import { Invoice, Organization } from "@/lib/mock-data";
-import { formatFCFA, formatDate } from "@/lib/utils";
+import { formatFCFA, formatDate, getCurrencyLabel, getCurrencySymbol, organizationHeaderLines } from "@/lib/utils";
 
 /**
  * Generates official, clean A4 HTML markup for any invoice.
@@ -25,6 +25,12 @@ export function generateInvoiceHtml(invoice: Invoice, org: Organization): string
   const taxRate = invoice.taxRate !== undefined ? invoice.taxRate : 18;
   const taxAmount = invoice.taxAmount !== undefined ? invoice.taxAmount : (invoice.amount - subtotal);
   const totalAmount = invoice.amount;
+  const currency = invoice.currency || org.currency;
+
+  // Le sous-total enregistré est déjà remisé : on reconstitue le brut pour afficher la remise
+  const discountPercent = invoice.discountPercent || 0;
+  const grossSubtotal = items.reduce((sum, it) => sum + (Number(it.total) || 0), 0);
+  const discountAmount = discountPercent > 0 ? Math.max(0, grossSubtotal - subtotal) : 0;
 
   const statusLabel =
     invoice.status === "payee"
@@ -55,10 +61,10 @@ export function generateInvoiceHtml(invoice: Invoice, org: Organization): string
           ${item.quantity}
         </td>
         <td style="padding: 12px 14px; border-bottom: 1px solid #f0f0f0; text-align: right; font-family: monospace; color: #525252;">
-          ${formatFCFA(item.unitPrice)}
+          ${formatFCFA(item.unitPrice, currency)}
         </td>
         <td style="padding: 12px 14px; border-bottom: 1px solid #f0f0f0; text-align: right; font-family: monospace; font-weight: 700; color: #171717;">
-          ${formatFCFA(item.total)}
+          ${formatFCFA(item.total, currency)}
         </td>
       </tr>
     `
@@ -69,7 +75,7 @@ export function generateInvoiceHtml(invoice: Invoice, org: Organization): string
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
-  <title>Facture ${invoice.number} — ${escapeHtml(org.name)}</title>
+  <title>Facture ${escapeHtml(invoice.number)} — ${escapeHtml(org.name)}</title>
   <style>
     @page {
       size: A4 portrait;
@@ -301,15 +307,13 @@ export function generateInvoiceHtml(invoice: Invoice, org: Organization): string
         </div>
       </div>
       <div class="company-details">
-        ${escapeHtml(org.address)}, ${escapeHtml(org.city)} · ${escapeHtml(org.country)}<br />
-        NINEA : <span style="font-family: monospace;">${escapeHtml(org.taxId)}</span> · RCCM : <span style="font-family: monospace;">${escapeHtml(org.rccm)}</span><br />
-        Tél : ${escapeHtml(org.phone)} · Email : ${escapeHtml(org.email)}
+        ${organizationHeaderLines(org).map(escapeHtml).join("<br />")}
       </div>
     </div>
     <div class="inv-meta">
       <div class="inv-title">FACTURE</div>
       <div class="inv-num">${escapeHtml(invoice.number)}</div>
-      <div class="inv-currency">Devise : FCFA (XOF)</div>
+      <div class="inv-currency">Devise : ${escapeHtml(getCurrencyLabel(currency))}</div>
       <div class="status-badge">${statusLabel}</div>
     </div>
   </div>
@@ -349,7 +353,7 @@ export function generateInvoiceHtml(invoice: Invoice, org: Organization): string
         <th>Description</th>
         <th style="width: 60px; text-align: center;">Qté</th>
         <th style="width: 140px; text-align: right;">Prix Unitaire HT</th>
-        <th style="width: 150px; text-align: right;">Total HT (FCFA)</th>
+        <th style="width: 150px; text-align: right;">Total HT (${escapeHtml(getCurrencySymbol(currency))})</th>
       </tr>
     </thead>
     <tbody>
@@ -360,17 +364,32 @@ export function generateInvoiceHtml(invoice: Invoice, org: Organization): string
   <!-- Totals Breakdown -->
   <div class="totals-wrap">
     <div class="totals-box">
-      <div class="totals-row">
+      ${
+        discountAmount > 0
+          ? `<div class="totals-row">
         <span>Sous-total Brut HT :</span>
-        <span style="font-family: monospace; font-weight: 600;">${formatFCFA(subtotal)}</span>
+        <span style="font-family: monospace; font-weight: 600;">${formatFCFA(grossSubtotal, currency)}</span>
       </div>
       <div class="totals-row">
+        <span>Remise (${discountPercent}%) :</span>
+        <span style="font-family: monospace; font-weight: 600;">- ${formatFCFA(discountAmount, currency)}</span>
+      </div>
+      <div class="totals-row">
+        <span>Total Net HT :</span>
+        <span style="font-family: monospace; font-weight: 600;">${formatFCFA(subtotal, currency)}</span>
+      </div>`
+          : `<div class="totals-row">
+        <span>Sous-total Brut HT :</span>
+        <span style="font-family: monospace; font-weight: 600;">${formatFCFA(subtotal, currency)}</span>
+      </div>`
+      }
+      <div class="totals-row">
         <span>TVA (${taxRate}%) :</span>
-        <span style="font-family: monospace; font-weight: 600;">${formatFCFA(taxAmount)}</span>
+        <span style="font-family: monospace; font-weight: 600;">${formatFCFA(taxAmount, currency)}</span>
       </div>
       <div class="total-final">
         <span style="text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;">TOTAL TTC NET :</span>
-        <span class="amount">${formatFCFA(totalAmount)}</span>
+        <span class="amount">${formatFCFA(totalAmount, currency)}</span>
       </div>
     </div>
   </div>

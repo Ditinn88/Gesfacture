@@ -1,8 +1,10 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { Invoice, Client, Organization, DEFAULT_ORGANIZATION } from "@/lib/mock-data";
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { Invoice, InvoiceItem, Client, Organization, DEFAULT_ORGANIZATION } from "@/lib/mock-data";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth-context";
+import { sumByCurrency, toLocalYMD } from "@/lib/utils";
 
 interface DataContextType {
   invoices: Invoice[];
@@ -10,6 +12,8 @@ interface DataContextType {
   organization: Organization;
   isLoading: boolean;
   isCloudSynced: boolean;
+  syncError: string | null;
+  dismissSyncError: () => void;
   addInvoice: (invoiceData: Omit<Invoice, "id"> & { id?: string }) => Invoice;
   updateInvoice: (id: string, updates: Partial<Invoice>) => void;
   deleteInvoice: (id: string) => boolean;
@@ -30,6 +34,10 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 const INVOICES_STORAGE_KEY = "gesfacture_invoices_v7";
 const CLIENTS_STORAGE_KEY = "gesfacture_clients_v7";
 const ORGANIZATION_STORAGE_KEY = "gesfacture_organization_v7";
+
+// Cache local séparé par compte Supabase : un utilisateur ne voit jamais le cache d'un autre
+const storageKey = (base: string, cloudUserId: string | null) =>
+  cloudUserId ? `${base}_${cloudUserId}` : base;
 
 // Helper to detect and reject legacy mock / fixture data only
 const isMockInvoice = (inv: any): boolean => {
@@ -120,37 +128,156 @@ const parseOrgRow = (row: any): Organization => {
   };
 };
 
+// Les quantités / prix saisis étaient parfois enregistrés en texte : on les remet en nombres
+const normalizeItems = (items: any): InvoiceItem[] =>
+  Array.isArray(items)
+    ? items.map((it: any) => ({
+        ...it,
+        quantity: Number(it.quantity) || 0,
+        unitPrice: Number(it.unitPrice) || 0,
+        total: Number(it.total) || 0,
+      }))
+    : [];
+
+const rowToInvoice = (row: any): Invoice => ({
+  id: row.id,
+  number: row.number,
+  client: typeof row.client === "string" ? JSON.parse(row.client) : row.client,
+  issueDate: row.issue_date,
+  dueDate: row.due_date,
+  amount: Number(row.amount),
+  subtotal: Number(row.subtotal || 0),
+  taxRate: row.tax_rate === null || row.tax_rate === undefined ? 18 : Number(row.tax_rate),
+  taxAmount: Number(row.tax_amount || 0),
+  discountPercent: Number(row.discount_percent || 0),
+  paidAmount: Number(row.paid_amount || 0),
+  status: row.status,
+  paymentMethod: row.payment_method,
+  items: normalizeItems(row.items),
+  notes: row.notes || "",
+  currency: row.currency || "XOF",
+});
+
+const rowToClient = (row: any): Client => ({
+  id: row.id,
+  name: row.name,
+  email: row.email,
+  city: row.city || "Dakar",
+  country: row.country || "Sénégal",
+  phone: row.phone,
+  address: row.address,
+  totalInvoiced: Number(row.total_invoiced || 0),
+  invoicesCount: Number(row.invoices_count || 0),
+  status: row.status,
+  percentage: Number(row.percentage || 10),
+});
+
+const invoiceUpdatesToRow = (updates: Partial<Invoice>): Record<string, any> => {
+  const mapped: Record<string, any> = {
+    updated_at: new Date().toISOString(),
+  };
+  if (updates.number) mapped.number = updates.number;
+  if (updates.client) mapped.client = updates.client;
+  if (updates.issueDate) mapped.issue_date = updates.issueDate;
+  if (updates.dueDate) mapped.due_date = updates.dueDate;
+  if (updates.amount !== undefined) mapped.amount = updates.amount;
+  if (updates.subtotal !== undefined) mapped.subtotal = updates.subtotal;
+  if (updates.taxRate !== undefined) mapped.tax_rate = updates.taxRate;
+  if (updates.taxAmount !== undefined) mapped.tax_amount = updates.taxAmount;
+  if (updates.discountPercent !== undefined) mapped.discount_percent = updates.discountPercent;
+  if (updates.paidAmount !== undefined) mapped.paid_amount = updates.paidAmount;
+  if (updates.status) mapped.status = updates.status;
+  if (updates.paymentMethod) mapped.payment_method = updates.paymentMethod;
+  if (updates.items) mapped.items = updates.items;
+  if (updates.notes !== undefined) mapped.notes = updates.notes;
+  if (updates.currency) mapped.currency = updates.currency;
+  return mapped;
+};
+
+const readCache = <T,>(key: string): T | null => {
+  try {
+    const stored = localStorage.getItem(key);
+    return stored ? (JSON.parse(stored) as T) : null;
+  } catch (e) {
+    console.warn("Could not load from localStorage cache", e);
+    return null;
+  }
+};
+
+const writeCache = (key: string, value: unknown) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    console.warn("Could not persist to localStorage", e);
+  }
+};
+
+// Comparaison insensible à la casse et aux espaces (doubles espaces, insécables…)
+const normalizeText = (s: string) => s.normalize("NFC").replace(/\s+/g, " ").trim().toLowerCase();
+const sameText = (a?: string, b?: string) => Boolean(a && b && normalizeText(a) === normalizeText(b));
+
+// Une facture appartient au client dont elle porte l'id ; à défaut (anciennes factures), nom ou email
+const invoiceBelongsTo = (inv: Invoice, c: Client) =>
+  inv.client.id ? inv.client.id === c.id : sameText(inv.client.name, c.name) || sameText(inv.client.email, c.email);
+
 export function DataProvider({ children }: { children: React.ReactNode }) {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
+  const { session, isLoading: authLoading } = useAuth();
+  // Synchronisation cloud uniquement avec une vraie session Supabase (pas en mode démo)
+  const cloudUserId = isSupabaseConfigured && supabase && session?.user ? session.user.id : null;
+  const cloud = cloudUserId ? supabase : null;
+
+  const [rawInvoices, setRawInvoices] = useState<Invoice[]>([]);
+  const [rawClients, setRawClients] = useState<Client[]>([]);
   const [organization, setOrganization] = useState<Organization>(DEFAULT_ORGANIZATION);
   const [isLoading, setIsLoading] = useState(true);
   const [isCloudSynced, setIsCloudSynced] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const previousCloudUserId = useRef<string | null>(null);
 
-  // Helper de synchronisation avec localStorage
-  const saveInvoicesLocally = (newInvoices: Invoice[]) => {
-    const cleanInvoices = newInvoices.filter((i) => !isMockInvoice(i));
-    setInvoices(cleanInvoices);
-    try {
-      localStorage.setItem(INVOICES_STORAGE_KEY, JSON.stringify(cleanInvoices));
-    } catch (e) {
-      console.warn("Could not persist invoices", e);
-    }
+  const reportSyncError = useCallback((action: string, error: any) => {
+    console.error(`${action} — Supabase:`, error);
+    const detail = error?.message ? ` (${error.message})` : "";
+    setSyncError(
+      `${action} n'a pas pu être enregistré(e) dans Supabase${detail}. La modification est conservée sur cet appareil uniquement.`
+    );
+  }, []);
+
+  const dismissSyncError = useCallback(() => setSyncError(null), []);
+
+  // Mise à jour de l'état + du cache local, via des updaters fonctionnels (pas de closure périmée)
+  const saveInvoices = (updater: (prev: Invoice[]) => Invoice[]) => {
+    setRawInvoices((prev) => {
+      const next = updater(prev).filter((i) => !isMockInvoice(i));
+      writeCache(storageKey(INVOICES_STORAGE_KEY, cloudUserId), next);
+      return next;
+    });
   };
 
-  const saveClientsLocally = (newClients: Client[]) => {
-    const cleanClients = newClients.filter((c) => !isMockClient(c));
-    setClients(cleanClients);
-    try {
-      localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(cleanClients));
-    } catch (e) {
-      console.warn("Could not persist clients", e);
-    }
+  const saveClients = (updater: (prev: Client[]) => Client[]) => {
+    setRawClients((prev) => {
+      const next = updater(prev).filter((c) => !isMockClient(c));
+      writeCache(storageKey(CLIENTS_STORAGE_KEY, cloudUserId), next);
+      return next;
+    });
   };
 
-  // Chargement des données : Supabase si configuré, sinon LocalStorage propre
+  // Chargement des données : cache local du compte courant, puis Supabase si une session existe
   useEffect(() => {
+    if (authLoading) return;
+
     let isMounted = true;
+    let channel: ReturnType<NonNullable<typeof supabase>["channel"]> | null = null;
+
+    // Déconnexion : on efface le cache du compte précédent (appareil partagé)
+    const previous = previousCloudUserId.current;
+    if (previous && previous !== cloudUserId) {
+      try {
+        [INVOICES_STORAGE_KEY, CLIENTS_STORAGE_KEY, ORGANIZATION_STORAGE_KEY].forEach((key) =>
+          localStorage.removeItem(storageKey(key, previous))
+        );
+      } catch (e) {}
+    }
+    previousCloudUserId.current = cloudUserId;
 
     // Nettoyage immédiat des anciennes clés de localStorage contenant des mocks
     try {
@@ -174,253 +301,188 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       // Ignorer si non disponible
     }
 
-    async function loadData() {
-      // 1. D'abord charger le cache localStorage v5 (uniquement de vraies données saisies)
-      try {
-        const storedInvoices = localStorage.getItem(INVOICES_STORAGE_KEY);
-        const storedClients = localStorage.getItem(CLIENTS_STORAGE_KEY);
-        const storedOrg = localStorage.getItem(ORGANIZATION_STORAGE_KEY);
+    setIsLoading(true);
+    setIsCloudSynced(false);
 
-        if (storedInvoices) {
-          const parsed = JSON.parse(storedInvoices);
-          if (Array.isArray(parsed)) {
-            const clean = parsed.filter((i) => !isMockInvoice(i));
-            setInvoices(clean);
-          }
-        }
-        if (storedClients) {
-          const parsed = JSON.parse(storedClients);
-          if (Array.isArray(parsed)) {
-            const clean = parsed.filter((c) => !isMockClient(c));
-            setClients(clean);
-          }
-        }
-        if (storedOrg) {
-          const parsed = JSON.parse(storedOrg);
-          if (parsed && typeof parsed === "object") {
-            setOrganization((prev) => ({ ...prev, ...parsed }));
-          }
-        }
-      } catch (e) {
-        console.warn("Could not load from localStorage cache", e);
-      }
+    // 1. Cache local du compte courant (vide si aucun : jamais les données d'un autre compte)
+    const cachedInvoices = readCache<Invoice[]>(storageKey(INVOICES_STORAGE_KEY, cloudUserId));
+    const cachedClients = readCache<Client[]>(storageKey(CLIENTS_STORAGE_KEY, cloudUserId));
+    const cachedOrg = readCache<Organization>(storageKey(ORGANIZATION_STORAGE_KEY, cloudUserId));
 
-      // 2. Si Supabase est configuré, synchroniser en direct avec la base distante
-      if (isSupabaseConfigured && supabase) {
-        try {
-          const [invoicesRes, clientsRes, orgRes] = await Promise.all([
-            supabase.from("invoices").select("*").order("created_at", { ascending: false }),
-            supabase.from("clients").select("*").order("created_at", { ascending: false }),
-            supabase.from("organizations").select("*").limit(1).maybeSingle(),
-          ]);
+    setRawInvoices(
+      Array.isArray(cachedInvoices)
+        ? cachedInvoices
+            .filter((i) => !isMockInvoice(i))
+            .map((i) => ({ ...i, items: normalizeItems(i.items) }))
+        : []
+    );
+    setRawClients(Array.isArray(cachedClients) ? cachedClients.filter((c) => !isMockClient(c)) : []);
+    setOrganization(
+      cachedOrg && typeof cachedOrg === "object"
+        ? { ...DEFAULT_ORGANIZATION, ...cachedOrg }
+        : DEFAULT_ORGANIZATION
+    );
 
-          if (isMounted) {
-            if (invoicesRes.data) {
-              const mappedInvoices: Invoice[] = invoicesRes.data
-                .map((row: any) => ({
-                  id: row.id,
-                  number: row.number,
-                  client: typeof row.client === "string" ? JSON.parse(row.client) : row.client,
-                  issueDate: row.issue_date,
-                  dueDate: row.due_date,
-                  amount: Number(row.amount),
-                  subtotal: Number(row.subtotal || 0),
-                  taxRate: Number(row.tax_rate || 18),
-                  taxAmount: Number(row.tax_amount || 0),
-                  paidAmount: Number(row.paid_amount || 0),
-                  status: row.status,
-                  paymentMethod: row.payment_method,
-                  items: Array.isArray(row.items) ? row.items : [],
-                  notes: row.notes || "",
-                }))
-                .filter((inv) => !isMockInvoice(inv));
-
-              setInvoices(mappedInvoices);
-              localStorage.setItem(INVOICES_STORAGE_KEY, JSON.stringify(mappedInvoices));
-            }
-
-            if (clientsRes.data) {
-              const mappedClients: Client[] = clientsRes.data
-                .map((row: any) => ({
-                  id: row.id,
-                  name: row.name,
-                  email: row.email,
-                  city: row.city || "Dakar",
-                  country: row.country || "Sénégal",
-                  phone: row.phone,
-                  address: row.address,
-                  totalInvoiced: Number(row.total_invoiced || 0),
-                  invoicesCount: Number(row.invoices_count || 0),
-                  status: row.status,
-                  percentage: Number(row.percentage || 10),
-                }))
-                .filter((c) => !isMockClient(c));
-
-              setClients(mappedClients);
-              localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(mappedClients));
-            }
-
-            if (orgRes.data) {
-              const mappedOrg = parseOrgRow(orgRes.data);
-              setOrganization(mappedOrg);
-              localStorage.setItem(ORGANIZATION_STORAGE_KEY, JSON.stringify(mappedOrg));
-            }
-
-            if (!invoicesRes.error && !clientsRes.error) {
-              setIsCloudSynced(true);
-            }
-          }
-        } catch (err) {
-          console.warn("Supabase fetch failed, continuing with local cache:", err);
-        }
-
-        // 3. Écoute Realtime sur les changements de la base de données
-        try {
-          const activeClient = supabase;
-          const channel = activeClient
-            .channel("gesfacture-realtime")
-            .on(
-              "postgres_changes",
-              { event: "*", schema: "public", table: "invoices" },
-              async () => {
-                const { data } = await activeClient.from("invoices").select("*").order("created_at", { ascending: false });
-                if (data && isMounted) {
-                  const mapped: Invoice[] = data.map((row: any) => ({
-                    id: row.id,
-                    number: row.number,
-                    client: typeof row.client === "string" ? JSON.parse(row.client) : row.client,
-                    issueDate: row.issue_date,
-                    dueDate: row.due_date,
-                    amount: Number(row.amount),
-                    subtotal: Number(row.subtotal || 0),
-                    taxRate: Number(row.tax_rate || 18),
-                    taxAmount: Number(row.tax_amount || 0),
-                    paidAmount: Number(row.paid_amount || 0),
-                    status: row.status,
-                    paymentMethod: row.payment_method,
-                    items: Array.isArray(row.items) ? row.items : [],
-                    notes: row.notes || "",
-                  }));
-                  setInvoices(mapped);
-                  localStorage.setItem(INVOICES_STORAGE_KEY, JSON.stringify(mapped));
-                }
-              }
-            )
-            .on(
-              "postgres_changes",
-              { event: "*", schema: "public", table: "clients" },
-              async () => {
-                const { data } = await activeClient.from("clients").select("*").order("created_at", { ascending: false });
-                if (data && isMounted) {
-                  const mapped: Client[] = data.map((row: any) => ({
-                    id: row.id,
-                    name: row.name,
-                    email: row.email,
-                    city: row.city || "Dakar",
-                    country: row.country || "Sénégal",
-                    phone: row.phone,
-                    address: row.address,
-                    totalInvoiced: Number(row.total_invoiced || 0),
-                    invoicesCount: Number(row.invoices_count || 0),
-                    status: row.status,
-                    percentage: Number(row.percentage || 10),
-                  }));
-                  setClients(mapped);
-                  localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(mapped));
-                }
-              }
-            )
-            .on(
-              "postgres_changes",
-              { event: "*", schema: "public", table: "organizations" },
-              async () => {
-                const { data } = await activeClient.from("organizations").select("*").limit(1).maybeSingle();
-                if (data && isMounted) {
-                  const mapped = parseOrgRow(data);
-                  setOrganization(mapped);
-                  localStorage.setItem(ORGANIZATION_STORAGE_KEY, JSON.stringify(mapped));
-                }
-              }
-            )
-            .subscribe();
-
-          return () => {
-            activeClient.removeChannel(channel);
-          };
-        } catch (subErr) {
-          console.warn("Realtime subscription warning:", subErr);
-        }
-      }
-
-      if (isMounted) {
-        setIsLoading(false);
-      }
+    if (!cloudUserId || !supabase) {
+      setIsLoading(false);
+      return () => {
+        isMounted = false;
+      };
     }
 
-    loadData();
+    const client = supabase;
+    const userId = cloudUserId;
+
+    const fetchInvoices = () =>
+      client.from("invoices").select("*").order("created_at", { ascending: false });
+    const fetchClients = () =>
+      client.from("clients").select("*").order("created_at", { ascending: false });
+    const fetchOrganization = () =>
+      client.from("organizations").select("*").eq("id", userId).maybeSingle();
+
+    const applyInvoices = (rows: any[]) => {
+      const mapped = rows.map(rowToInvoice).filter((inv) => !isMockInvoice(inv));
+      setRawInvoices(mapped);
+      writeCache(storageKey(INVOICES_STORAGE_KEY, userId), mapped);
+    };
+    const applyClients = (rows: any[]) => {
+      const mapped = rows.map(rowToClient).filter((c) => !isMockClient(c));
+      setRawClients(mapped);
+      writeCache(storageKey(CLIENTS_STORAGE_KEY, userId), mapped);
+    };
+    const applyOrganization = (row: any) => {
+      const mapped = parseOrgRow(row);
+      setOrganization(mapped);
+      writeCache(storageKey(ORGANIZATION_STORAGE_KEY, userId), mapped);
+    };
+
+    async function loadCloudData() {
+      try {
+        const [invoicesRes, clientsRes, orgRes] = await Promise.all([
+          fetchInvoices(),
+          fetchClients(),
+          fetchOrganization(),
+        ]);
+        if (!isMounted) return;
+
+        if (invoicesRes.error) reportSyncError("Le chargement des factures", invoicesRes.error);
+        else if (invoicesRes.data) applyInvoices(invoicesRes.data);
+
+        if (clientsRes.error) reportSyncError("Le chargement des clients", clientsRes.error);
+        else if (clientsRes.data) applyClients(clientsRes.data);
+
+        if (orgRes.error) reportSyncError("Le chargement des paramètres", orgRes.error);
+        else if (orgRes.data) applyOrganization(orgRes.data);
+
+        setIsCloudSynced(!invoicesRes.error && !clientsRes.error && !orgRes.error);
+      } catch (err) {
+        if (isMounted) reportSyncError("Le chargement des données", err);
+      }
+
+      if (!isMounted) return;
+
+      // 2. Écoute Realtime : rechargement de la table modifiée
+      channel = client
+        .channel(`gesfacture-realtime-${userId}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "invoices" }, async () => {
+          const { data } = await fetchInvoices();
+          if (data && isMounted) applyInvoices(data);
+        })
+        .on("postgres_changes", { event: "*", schema: "public", table: "clients" }, async () => {
+          const { data } = await fetchClients();
+          if (data && isMounted) applyClients(data);
+        })
+        .on("postgres_changes", { event: "*", schema: "public", table: "organizations" }, async () => {
+          const { data } = await fetchOrganization();
+          if (data && isMounted) applyOrganization(data);
+        })
+        .subscribe();
+
+      setIsLoading(false);
+    }
+
+    loadCloudData();
 
     return () => {
       isMounted = false;
+      if (channel) client.removeChannel(channel);
     };
-  }, []);
+  }, [authLoading, cloudUserId, reportSyncError]);
+
+  // Une facture envoyée dont l'échéance est dépassée est en retard
+  const invoices = useMemo(() => {
+    const today = toLocalYMD(new Date());
+    return rawInvoices.map((inv) =>
+      inv.status === "envoyee" && inv.dueDate && inv.dueDate < today
+        ? { ...inv, status: "en_retard" as const }
+        : inv
+    );
+  }, [rawInvoices]);
+
+  // Totaux clients calculés à partir des factures émises (jamais désynchronisés)
+  const clients = useMemo(
+    () =>
+      rawClients.map((c) => {
+        const own = rawInvoices.filter((inv) => inv.status !== "brouillon" && invoiceBelongsTo(inv, c));
+        return {
+          ...c,
+          totalInvoiced: own.reduce((sum, inv) => sum + (inv.amount || 0), 0),
+          invoicesCount: own.length,
+          totalsByCurrency: sumByCurrency(own, organization.currency || "XOF"),
+        };
+      }),
+    [rawClients, rawInvoices, organization.currency]
+  );
 
   // Gestion Organisation
-  const updateOrganization = (updates: Partial<Organization>) => {
-    setOrganization((prev) => {
-      const updated = { ...prev, ...updates };
-      try {
-        localStorage.setItem(ORGANIZATION_STORAGE_KEY, JSON.stringify(updated));
-      } catch (e) {
-        console.warn("Could not persist organization", e);
-      }
+  const persistOrganization = (updated: Organization) => {
+    setOrganization(updated);
+    writeCache(storageKey(ORGANIZATION_STORAGE_KEY, cloudUserId), updated);
 
-      if (isSupabaseConfigured && supabase) {
-        // Enregistrer l'IBAN avec les métadonnées bancaires
-        const ibanPayload = JSON.stringify({
-          iban: updated.iban || "",
-          bankName: updated.bankName || "",
-          bankSwift: updated.bankSwift || "",
+    if (cloud && cloudUserId) {
+      // Enregistrer l'IBAN avec les métadonnées bancaires
+      const ibanPayload = JSON.stringify({
+        iban: updated.iban || "",
+        bankName: updated.bankName || "",
+        bankSwift: updated.bankSwift || "",
+      });
+
+      cloud
+        .from("organizations")
+        .upsert({
+          id: cloudUserId,
+          user_id: cloudUserId,
+          name: updated.name,
+          legal_name: updated.legalName,
+          rccm: updated.rccm,
+          tax_id: updated.taxId,
+          address: updated.address,
+          city: updated.city,
+          country: updated.country,
+          phone: updated.phone,
+          email: updated.email,
+          website: updated.website,
+          currency: updated.currency,
+          wave_number: updated.waveNumber,
+          om_number: updated.omNumber,
+          iban: ibanPayload,
+          invoice_prefix: updated.invoicePrefix,
+          payment_delay: updated.paymentDelay,
+          default_vat_rate: updated.defaultVatRate,
+          updated_at: new Date().toISOString(),
+        })
+        .then(({ error }) => {
+          if (error) reportSyncError("La mise à jour des paramètres", error);
         });
+    }
+  };
 
-        supabase
-          .from("organizations")
-          .upsert({
-            id: "default",
-            name: updated.name,
-            legal_name: updated.legalName,
-            rccm: updated.rccm,
-            tax_id: updated.taxId,
-            address: updated.address,
-            city: updated.city,
-            country: updated.country,
-            phone: updated.phone,
-            email: updated.email,
-            website: updated.website,
-            currency: updated.currency,
-            wave_number: updated.waveNumber,
-            om_number: updated.omNumber,
-            iban: ibanPayload,
-            invoice_prefix: updated.invoicePrefix,
-            payment_delay: updated.paymentDelay,
-            default_vat_rate: updated.defaultVatRate,
-            updated_at: new Date().toISOString(),
-          })
-          .then(({ error }) => {
-            if (error) console.error("Error updating organization in Supabase:", error);
-          });
-      }
-
-      return updated;
-    });
+  const updateOrganization = (updates: Partial<Organization>) => {
+    persistOrganization({ ...organization, ...updates });
   };
 
   const resetOrganization = () => {
-    setOrganization(DEFAULT_ORGANIZATION);
-    try {
-      localStorage.setItem(ORGANIZATION_STORAGE_KEY, JSON.stringify(DEFAULT_ORGANIZATION));
-    } catch (e) {
-      console.warn("Could not reset organization", e);
-    }
+    persistOrganization(DEFAULT_ORGANIZATION);
   };
 
   // CRUD Factures
@@ -428,41 +490,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const id = invoiceData.id || `inv-${Date.now()}`;
     const newInvoice: Invoice = {
       ...invoiceData,
+      items: normalizeItems(invoiceData.items),
+      currency: invoiceData.currency || organization.currency || "XOF",
       id,
     };
-    const updated = [newInvoice, ...invoices];
-    saveInvoicesLocally(updated);
-
-    // Mettre à jour les stats du client
-    setClients((prev) =>
-      prev.map((c) => {
-        if (c.name.toLowerCase() === newInvoice.client.name.toLowerCase()) {
-          const updatedClient = {
-            ...c,
-            totalInvoiced: c.totalInvoiced + newInvoice.amount,
-            invoicesCount: c.invoicesCount + 1,
-          };
-
-          if (isSupabaseConfigured && supabase) {
-            supabase
-              .from("clients")
-              .update({
-                total_invoiced: updatedClient.totalInvoiced,
-                invoices_count: updatedClient.invoicesCount,
-              })
-              .eq("id", c.id)
-              .then();
-          }
-
-          return updatedClient;
-        }
-        return c;
-      })
-    );
+    saveInvoices((prev) => [newInvoice, ...prev]);
 
     // Sauvegarder dans Supabase
-    if (isSupabaseConfigured && supabase) {
-      supabase
+    if (cloud) {
+      cloud
         .from("invoices")
         .insert({
           id: newInvoice.id,
@@ -472,16 +508,18 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           due_date: newInvoice.dueDate,
           amount: newInvoice.amount,
           subtotal: newInvoice.subtotal || 0,
-          tax_rate: newInvoice.taxRate || 18,
+          tax_rate: newInvoice.taxRate ?? 18,
           tax_amount: newInvoice.taxAmount || 0,
+          discount_percent: newInvoice.discountPercent || 0,
           paid_amount: newInvoice.paidAmount || 0,
           status: newInvoice.status,
           payment_method: newInvoice.paymentMethod,
           items: newInvoice.items || [],
           notes: newInvoice.notes || "",
+          currency: newInvoice.currency,
         })
         .then(({ error }) => {
-          if (error) console.error("Error inserting invoice in Supabase:", error);
+          if (error) reportSyncError(`La facture ${newInvoice.number}`, error);
         });
     }
 
@@ -489,48 +527,30 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateInvoice = (id: string, updates: Partial<Invoice>) => {
-    const updated = invoices.map((inv) => (inv.id === id ? { ...inv, ...updates } : inv));
-    saveInvoicesLocally(updated);
+    const normalized = updates.items ? { ...updates, items: normalizeItems(updates.items) } : updates;
+    saveInvoices((prev) => prev.map((inv) => (inv.id === id ? { ...inv, ...normalized } : inv)));
 
-    if (isSupabaseConfigured && supabase) {
-      const mapped: Record<string, any> = {
-        updated_at: new Date().toISOString(),
-      };
-      if (updates.number) mapped.number = updates.number;
-      if (updates.client) mapped.client = updates.client;
-      if (updates.issueDate) mapped.issue_date = updates.issueDate;
-      if (updates.dueDate) mapped.due_date = updates.dueDate;
-      if (updates.amount !== undefined) mapped.amount = updates.amount;
-      if (updates.subtotal !== undefined) mapped.subtotal = updates.subtotal;
-      if (updates.taxRate !== undefined) mapped.tax_rate = updates.taxRate;
-      if (updates.taxAmount !== undefined) mapped.tax_amount = updates.taxAmount;
-      if (updates.paidAmount !== undefined) mapped.paid_amount = updates.paidAmount;
-      if (updates.status) mapped.status = updates.status;
-      if (updates.paymentMethod) mapped.payment_method = updates.paymentMethod;
-      if (updates.items) mapped.items = updates.items;
-      if (updates.notes !== undefined) mapped.notes = updates.notes;
-
-      supabase
+    if (cloud) {
+      cloud
         .from("invoices")
-        .update(mapped)
+        .update(invoiceUpdatesToRow(normalized))
         .eq("id", id)
         .then(({ error }) => {
-          if (error) console.error("Error updating invoice in Supabase:", error);
+          if (error) reportSyncError("La modification de la facture", error);
         });
     }
   };
 
   const deleteInvoice = (id: string): boolean => {
-    const updated = invoices.filter((inv) => inv.id !== id);
-    saveInvoicesLocally(updated);
+    saveInvoices((prev) => prev.filter((inv) => inv.id !== id));
 
-    if (isSupabaseConfigured && supabase) {
-      supabase
+    if (cloud) {
+      cloud
         .from("invoices")
         .delete()
         .eq("id", id)
         .then(({ error }) => {
-          if (error) console.error("Error deleting invoice in Supabase:", error);
+          if (error) reportSyncError("La suppression de la facture", error);
         });
     }
 
@@ -555,16 +575,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const newClient: Client = {
       ...clientData,
       id,
-      totalInvoiced: clientData.totalInvoiced || 0,
-      invoicesCount: clientData.invoicesCount || 0,
+      totalInvoiced: 0,
+      invoicesCount: 0,
       status: clientData.status || "actif",
       percentage: clientData.percentage || 10,
     };
-    const updated = [newClient, ...clients];
-    saveClientsLocally(updated);
+    saveClients((prev) => [newClient, ...prev]);
 
-    if (isSupabaseConfigured && supabase) {
-      supabase
+    if (cloud) {
+      cloud
         .from("clients")
         .insert({
           id: newClient.id,
@@ -574,13 +593,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           country: newClient.country,
           phone: newClient.phone,
           address: newClient.address,
-          total_invoiced: newClient.totalInvoiced,
-          invoices_count: newClient.invoicesCount,
+          total_invoiced: 0,
+          invoices_count: 0,
           status: newClient.status,
           percentage: newClient.percentage,
         })
         .then(({ error }) => {
-          if (error) console.error("Error inserting client in Supabase:", error);
+          if (error) reportSyncError(`Le client ${newClient.name}`, error);
         });
     }
 
@@ -588,10 +607,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateClient = (id: string, updates: Partial<Client>) => {
-    const updated = clients.map((c) => (c.id === id ? { ...c, ...updates } : c));
-    saveClientsLocally(updated);
+    saveClients((prev) => prev.map((c) => (c.id === id ? { ...c, ...updates } : c)));
 
-    if (isSupabaseConfigured && supabase) {
+    if (cloud) {
       const mapped: Record<string, any> = {
         updated_at: new Date().toISOString(),
       };
@@ -601,32 +619,29 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       if (updates.country) mapped.country = updates.country;
       if (updates.phone !== undefined) mapped.phone = updates.phone;
       if (updates.address !== undefined) mapped.address = updates.address;
-      if (updates.totalInvoiced !== undefined) mapped.total_invoiced = updates.totalInvoiced;
-      if (updates.invoicesCount !== undefined) mapped.invoices_count = updates.invoicesCount;
       if (updates.status) mapped.status = updates.status;
       if (updates.percentage !== undefined) mapped.percentage = updates.percentage;
 
-      supabase
+      cloud
         .from("clients")
         .update(mapped)
         .eq("id", id)
         .then(({ error }) => {
-          if (error) console.error("Error updating client in Supabase:", error);
+          if (error) reportSyncError("La modification du client", error);
         });
     }
   };
 
   const deleteClient = (id: string): boolean => {
-    const updated = clients.filter((c) => c.id !== id);
-    saveClientsLocally(updated);
+    saveClients((prev) => prev.filter((c) => c.id !== id));
 
-    if (isSupabaseConfigured && supabase) {
-      supabase
+    if (cloud) {
+      cloud
         .from("clients")
         .delete()
         .eq("id", id)
         .then(({ error }) => {
-          if (error) console.error("Error deleting client in Supabase:", error);
+          if (error) reportSyncError("La suppression du client", error);
         });
     }
 
@@ -638,23 +653,22 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const resetAllData = () => {
-    saveInvoicesLocally([]);
-    saveClientsLocally([]);
+    saveInvoices(() => []);
+    saveClients(() => []);
     resetOrganization();
   };
 
   const clearDemoData = async () => {
-    saveInvoicesLocally([]);
-    saveClientsLocally([]);
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await Promise.all([
-          supabase.from("invoices").delete().neq("id", "none"),
-          supabase.from("clients").delete().neq("id", "none"),
-        ]);
-      } catch (e) {
-        console.warn("Could not delete from Supabase:", e);
-      }
+    saveInvoices(() => []);
+    saveClients(() => []);
+    if (cloud) {
+      // Les règles RLS limitent la suppression aux lignes du compte connecté
+      const [invoicesRes, clientsRes] = await Promise.all([
+        cloud.from("invoices").delete().neq("id", "none"),
+        cloud.from("clients").delete().neq("id", "none"),
+      ]);
+      if (invoicesRes.error) reportSyncError("La suppression des factures", invoicesRes.error);
+      if (clientsRes.error) reportSyncError("La suppression des clients", clientsRes.error);
     }
   };
 
@@ -666,6 +680,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         organization,
         isLoading,
         isCloudSynced,
+        syncError,
+        dismissSyncError,
         addInvoice,
         updateInvoice,
         deleteInvoice,

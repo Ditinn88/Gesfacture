@@ -1,75 +1,87 @@
 "use client";
 
-import React from "react";
-import { Wallet, ArrowUpRight, ArrowDownLeft, ShieldCheck, Sparkles } from "lucide-react";
-import { formatFCFA } from "@/lib/utils";
+import React, { useMemo } from "react";
+import Link from "next/link";
+import { Wallet, ArrowUpRight } from "lucide-react";
+import { useData } from "@/lib/data-context";
+import { formatCurrency, resolveInvoicesCurrency } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const METHODS = ["Wave", "Orange Money", "MTN MoMo", "Virement Bancaire", "Espèces"] as const;
 
 export default function WalletPage() {
+  const { invoices, organization, isLoading } = useData();
+
+  const currency = useMemo(
+    () => resolveInvoicesCurrency(invoices, organization.currency || "XOF"),
+    [invoices, organization.currency]
+  );
+
+  const accounts: Record<(typeof METHODS)[number], string> = {
+    Wave: organization.waveNumber || "",
+    "Orange Money": organization.omNumber || "",
+    "MTN MoMo": "",
+    "Virement Bancaire": [organization.bankName, organization.iban].filter(Boolean).join(" · "),
+    Espèces: "",
+  };
+
+  const totals = useMemo(() => {
+    const paid = invoices.filter((i) => i.status === "payee");
+    return METHODS.map((method) => {
+      const list = paid.filter((i) => i.paymentMethod === method);
+      return { method, count: list.length, amount: list.reduce((s, i) => s + i.amount, 0) };
+    });
+  }, [invoices]);
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-200">
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Portefeuille & Trésorerie (Wallet)
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
+            Portefeuille & Trésorerie
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Solde disponible en direct sur vos comptes bancaires et passerelles Mobile Money (Wave, Orange Money).
+          <p className="text-xs sm:text-sm text-neutral-400 dark:text-neutral-500 mt-1">
+            Total encaissé par moyen de paiement, d&apos;après vos factures payées.
           </p>
         </div>
+        <Link
+          href="/settings?tab=paiements"
+          className="group inline-flex items-center gap-1 sm:gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 text-[11px] sm:text-xs font-medium text-neutral-800 dark:text-neutral-200 bg-white dark:bg-neutral-800 hover:bg-neutral-900 hover:text-white hover:border-neutral-900 dark:hover:bg-white dark:hover:text-neutral-900 dark:hover:border-white border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-none transition-all duration-200 active:scale-95 shrink-0"
+        >
+          <span>Comptes</span>
+          <ArrowUpRight className="w-3.5 h-3.5 text-neutral-400 group-hover:text-white dark:group-hover:text-neutral-900 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" />
+        </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="p-6 bg-white dark:bg-[#0f172a] rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Solde Wave Business
-            </span>
-            <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
-              Instantané
-            </span>
-          </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">
-            {formatFCFA(8450000)}
-          </p>
-          <p className="text-[11px] text-slate-400">
-            Dernier encaissement : il y a 23 min (+3 200 000 FCFA)
-          </p>
-        </div>
-
-        <div className="p-6 bg-white dark:bg-[#0f172a] rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Solde Orange Money
-            </span>
-            <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-              Pro
-            </span>
-          </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">
-            {formatFCFA(4200000)}
-          </p>
-          <p className="text-[11px] text-slate-400">
-            Compte marchand lié : +221 77 000 00 00
-          </p>
-        </div>
-
-        <div className="p-6 bg-white dark:bg-[#0f172a] rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Compte Bancaire CBAO / BICIS
-            </span>
-            <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-              OHADA
-            </span>
-          </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">
-            {formatFCFA(15500000)}
-          </p>
-          <p className="text-[11px] text-slate-400">
-            RIB : SN012 01234 56789012345 67
-          </p>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        {totals.map(({ method, count, amount }) =>
+          isLoading ? (
+            <Skeleton key={method} className="h-28 rounded-2xl" />
+          ) : (
+            <div
+              key={method}
+              className="group p-5 bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-none hover:border-neutral-400/80 hover:-translate-y-0.5 hover:shadow-xs transition-all duration-200 space-y-2"
+            >
+              <div className="flex items-center gap-2">
+                <span className="w-7 h-7 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200/80 dark:border-neutral-700 flex items-center justify-center group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-200">
+                  <Wallet className="w-3.5 h-3.5" />
+                </span>
+                <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">{method}</p>
+              </div>
+              <p className="text-lg font-bold text-neutral-900 dark:text-white">{formatCurrency(amount, currency)}</p>
+              <p className="text-xs text-neutral-400 dark:text-neutral-500 truncate">
+                {count} facture(s) réglée(s)
+                {accounts[method] ? ` · ${accounts[method]}` : ""}
+              </p>
+            </div>
+          )
+        )}
       </div>
+
+      <p className="text-xs text-neutral-400 dark:text-neutral-500">
+        Les soldes réels de vos comptes Wave, Orange Money ou bancaires ne sont pas connectés à GESFACTURE :
+        ces montants reflètent uniquement les factures que vous avez marquées comme payées.
+      </p>
     </div>
   );
 }

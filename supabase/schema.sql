@@ -56,23 +56,58 @@ CREATE TABLE IF NOT EXISTS public.invoices (
   payment_method TEXT,
   items JSONB DEFAULT '[]'::jsonb,
   notes TEXT,
+  currency TEXT DEFAULT 'XOF',
   created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()),
   updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now())
 );
 
--- 4. Sécurité RLS
+-- Colonnes ajoutées après la première version (ce script peut être relancé sur une base existante)
+ALTER TABLE public.invoices ADD COLUMN IF NOT EXISTS currency TEXT DEFAULT 'XOF';
+ALTER TABLE public.invoices ADD COLUMN IF NOT EXISTS discount_percent NUMERIC DEFAULT 0;
+
+-- Propriétaire de chaque ligne (rempli automatiquement avec l'utilisateur connecté)
+-- L'organisation d'un utilisateur a pour id son identifiant de compte.
+ALTER TABLE public.organizations
+  ADD COLUMN IF NOT EXISTS user_id UUID UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid();
+ALTER TABLE public.clients
+  ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid();
+ALTER TABLE public.invoices
+  ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid();
+
+CREATE INDEX IF NOT EXISTS clients_user_id_idx ON public.clients (user_id);
+CREATE INDEX IF NOT EXISTS invoices_user_id_idx ON public.invoices (user_id);
+
+-- 4. Sécurité RLS : chaque utilisateur connecté n'accède qu'à ses propres lignes
 ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.invoices ENABLE ROW LEVEL SECURITY;
 
+-- Anciennes politiques ouvertes à tous (supprimées)
 DROP POLICY IF EXISTS "public_org" ON public.organizations;
-CREATE POLICY "public_org" ON public.organizations FOR ALL USING (true) WITH CHECK (true);
-
 DROP POLICY IF EXISTS "public_clients" ON public.clients;
-CREATE POLICY "public_clients" ON public.clients FOR ALL USING (true) WITH CHECK (true);
-
 DROP POLICY IF EXISTS "public_invoices" ON public.invoices;
-CREATE POLICY "public_invoices" ON public.invoices FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "own_org" ON public.organizations;
+CREATE POLICY "own_org" ON public.organizations FOR ALL TO authenticated
+  USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+DROP POLICY IF EXISTS "own_clients" ON public.clients;
+CREATE POLICY "own_clients" ON public.clients FOR ALL TO authenticated
+  USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+DROP POLICY IF EXISTS "own_invoices" ON public.invoices;
+CREATE POLICY "own_invoices" ON public.invoices FOR ALL TO authenticated
+  USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+-- Base existante : les lignes créées avant ces règles (user_id NULL) sont invisibles.
+-- Pour les rattacher à votre compte, remplacez l'email puis exécutez ce bloc séparément :
+--
+-- UPDATE public.clients  SET user_id = (SELECT id FROM auth.users WHERE email = 'votre@email.com') WHERE user_id IS NULL;
+-- UPDATE public.invoices SET user_id = (SELECT id FROM auth.users WHERE email = 'votre@email.com') WHERE user_id IS NULL;
+-- UPDATE public.organizations
+--   SET user_id = (SELECT id FROM auth.users WHERE email = 'votre@email.com'),
+--       id      = (SELECT id::text FROM auth.users WHERE email = 'votre@email.com')
+--   WHERE id = 'default' AND user_id IS NULL;
 
 -- 5. Auto-confirmation automatique des inscriptions (Supprime le blocage "Email not confirmed")
 -- Ce trigger valide instantanément l'adresse email des nouveaux inscrits dans auth.users

@@ -45,7 +45,7 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
         return (
           inv.number.toLowerCase().includes(cleanQuery) ||
           inv.client.name.toLowerCase().includes(cleanQuery) ||
-          inv.client.email.toLowerCase().includes(cleanQuery) ||
+          inv.client.email?.toLowerCase().includes(cleanQuery) ||
           inv.amount.toString().includes(cleanQuery) ||
           (inv.client.city && inv.client.city.toLowerCase().includes(cleanQuery))
         );
@@ -60,9 +60,9 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
       .filter((c) => {
         return (
           c.name.toLowerCase().includes(cleanQuery) ||
-          c.email.toLowerCase().includes(cleanQuery) ||
+          c.email?.toLowerCase().includes(cleanQuery) ||
           (c.phone && c.phone.includes(cleanQuery)) ||
-          (c.city && c.city.toLowerCase().includes(cleanQuery))
+          (c.city && c.city?.toLowerCase().includes(cleanQuery))
         );
       })
       .slice(0, 5);
@@ -222,7 +222,7 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
                             </div>
                             <div className="text-right shrink-0 flex items-center gap-2">
                               <span className="text-xs font-bold font-mono text-neutral-900 dark:text-white">
-                                {formatFCFA(inv.amount)}
+                                {formatFCFA(inv.amount, inv.currency)}
                               </span>
                               <StatusBadge status={inv.status} />
                             </div>

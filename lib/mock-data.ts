@@ -10,6 +10,7 @@ export interface Invoice {
   id: string;
   number: string;
   client: {
+    id?: string; // id du client source (absent sur les anciennes factures)
     name: string;
     email: string;
     city?: string;
@@ -24,12 +25,28 @@ export interface Invoice {
   subtotal?: number; // Total HT in FCFA
   taxRate?: number;  // 18% standard
   taxAmount?: number;
+  discountPercent?: number; // Remise commerciale appliquée au total HT
   paidAmount: number;
   status: "payee" | "envoyee" | "brouillon" | "en_retard";
   paymentMethod?: "Wave" | "Orange Money" | "MTN MoMo" | "Virement Bancaire" | "Espèces";
   items?: InvoiceItem[];
   notes?: string;
+  currency?: string; // e.g. "GNF", "XOF", "EUR", "USD", etc.
 }
+
+export interface CurrencyOption {
+  code: string;
+  label: string;
+  symbol: string;
+}
+
+export const SUPPORTED_CURRENCIES: CurrencyOption[] = [
+  { code: "GNF", label: "Franc Guinéen (GNF)", symbol: "GNF" },
+  { code: "XOF", label: "Franc CFA UEMOA (XOF)", symbol: "FCFA" },
+  { code: "XAF", label: "Franc CFA CEMAC (XAF)", symbol: "FCFA" },
+  { code: "EUR", label: "Euro (€)", symbol: "€" },
+  { code: "USD", label: "Dollar US ($)", symbol: "$" },
+];
 
 export interface Client {
   id: string;
@@ -41,6 +58,7 @@ export interface Client {
   address?: string;
   totalInvoiced: number;
   invoicesCount: number;
+  totalsByCurrency?: { currency: string; total: number }[]; // dérivé, jamais stocké
   status: "actif" | "inactif";
   percentage?: number;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -26,7 +26,22 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { Invoice, InvoiceItem } from "@/lib/mock-data";
-import { formatFCFA, formatDate } from "@/lib/utils";
+import {
+  formatFCFA,
+  formatDate,
+  toLocalYMD,
+  getCurrencyLabel,
+  getCurrencySymbol,
+  joinParts,
+  organizationHeaderLines,
+} from "@/lib/utils";
+
+const STATUS_LABELS: Record<Invoice["status"], string> = {
+  brouillon: "Brouillon",
+  envoyee: "Envoyée",
+  payee: "Payée",
+  en_retard: "En retard",
+};
 import { useData } from "@/lib/data-context";
 import { useAuth } from "@/lib/auth-context";
 import { CustomDropdown, DropdownItem } from "@/components/ui/custom-dropdown";
@@ -34,7 +49,16 @@ import { CustomDatePicker } from "@/components/ui/custom-date-picker";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { printInvoice, downloadInvoicePdf, downloadInvoiceDocument } from "@/lib/print-invoice";
 
+// useSearchParams() exige une frontière Suspense, sinon `next build` échoue au prérendu
 export default function CreateInvoicePage() {
+  return (
+    <Suspense fallback={null}>
+      <CreateInvoiceForm />
+    </Suspense>
+  );
+}
+
+function CreateInvoiceForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit");
@@ -58,24 +82,34 @@ export default function CreateInvoicePage() {
   const [newClientAddress, setNewClientAddress] = useState("");
 
   // Dates & Metadata
-  const todayStr = new Date().toISOString().split("T")[0];
-  const defaultDue = new Date(Date.now() + 15 * 86400000).toISOString().split("T")[0];
+  const todayStr = toLocalYMD(new Date());
+  const defaultDue = toLocalYMD(new Date(Date.now() + (organization.paymentDelay ?? 30) * 86400000));
   const [issueDate, setIssueDate] = useState(todayStr);
   const [dueDate, setDueDate] = useState(defaultDue);
 
   const currentYear = new Date().getFullYear();
+
+  // Numéro suivant = plus grand numéro existant pour ce préfixe + 1
+  // (invoices.length + 1 recréait un numéro déjà utilisé après une suppression)
+  const computeNextNumber = (prefix: string) => {
+    const maxUsed = invoices.reduce((max, inv) => {
+      if (!inv.number.startsWith(prefix)) return max;
+      const n = parseInt(inv.number.slice(prefix.length), 10);
+      return isNaN(n) ? max : Math.max(max, n);
+    }, 0);
+    return `${prefix}${String(maxUsed + 1).padStart(3, "0")}`;
+  };
+
   const [invoiceNumber, setInvoiceNumber] = useState(
-    `${organization.invoicePrefix || `FAC-${currentYear}-`}${String(invoices.length + 1).padStart(3, "0")}`
+    computeNextNumber(organization.invoicePrefix || `FAC-${currentYear}-`)
   );
 
   useEffect(() => {
     if (!editId) {
-      const prefix = organization.invoicePrefix || `FAC-${currentYear}-`;
-      setInvoiceNumber(`${prefix}${String(invoices.length + 1).padStart(3, "0")}`);
+      setInvoiceNumber(computeNextNumber(organization.invoicePrefix || `FAC-${currentYear}-`));
     }
-  }, [editId, invoices.length, organization.invoicePrefix, currentYear]);
+  }, [editId, invoices, organization.invoicePrefix, currentYear]);
 
-  const [currency] = useState("XOF (FCFA)");
   const [paymentMethod, setPaymentMethod] = useState<
     "Wave" | "Orange Money" | "MTN MoMo" | "Virement Bancaire" | "Espèces"
   >("Wave");
@@ -95,7 +129,7 @@ export default function CreateInvoicePage() {
   ]);
 
   // Tax & Discount
-  const [taxRate, setTaxRate] = useState<number>(18);
+  const [taxRate, setTaxRate] = useState<number>(organization.defaultVatRate ?? 18);
   const [applyDiscount, setApplyDiscount] = useState(false);
   const [discountPercent, setDiscountPercent] = useState<number>(0);
 
@@ -107,12 +141,19 @@ export default function CreateInvoicePage() {
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
   const [existingInvoice, setExistingInvoice] = useState<Invoice | null>(null);
+  // Le formulaire n'est pré-rempli qu'une fois : un rafraîchissement des données
+  // (Realtime, nouveau client) ne doit pas écraser la saisie en cours
+  const loadedEditId = React.useRef<string | null>(null);
+
+  // Devise de la facture : celle de la facture éditée, sinon celle des paramètres
+  const invoiceCurrency = existingInvoice?.currency || organization.currency || "XOF";
 
   // Load existing invoice if edit mode
   useEffect(() => {
-    if (editId) {
+    if (editId && loadedEditId.current !== editId) {
       const existing = getInvoice(editId);
       if (existing) {
+        loadedEditId.current = editId;
         setExistingInvoice(existing);
         setInvoiceNumber(existing.number);
         setIssueDate(existing.issueDate);
@@ -129,10 +170,15 @@ export default function CreateInvoicePage() {
         if (existing.taxRate !== undefined) {
           setTaxRate(existing.taxRate);
         }
-        // Match client by exact or fuzzy name
+        if (existing.discountPercent) {
+          setApplyDiscount(true);
+          setDiscountPercent(existing.discountPercent);
+        }
+        // Match client by id, then by exact or fuzzy name
         const qName = existing.client.name.toLowerCase();
         const matched = clients.find(
           (c) =>
+            c.id === existing.client.id ||
             c.name.toLowerCase() === qName ||
             c.name.toLowerCase().includes(qName) ||
             qName.includes(c.name.toLowerCase())
@@ -222,6 +268,8 @@ export default function CreateInvoicePage() {
     subtotal,
     taxRate,
     taxAmount,
+    discountPercent: applyDiscount ? discountPercent : 0,
+    currency: invoiceCurrency,
     amount: totalTTC,
     paidAmount: 0,
     status: "envoyee",
@@ -245,10 +293,15 @@ export default function CreateInvoicePage() {
 
     setIsSubmitting(true);
 
+    // En édition, « Enregistrer » ne doit pas faire repasser une facture payée en « Envoyée »
+    const finalStatus: Invoice["status"] =
+      editId && status === "envoyee" && existingInvoice?.status === "payee" ? "payee" : status;
+
     const invoicePayload: Omit<Invoice, "id"> & { id?: string } = {
       id: editId || undefined,
       number: invoiceNumber,
       client: {
+        id: activeClient.id,
         name: activeClient.name,
         email: activeClient.email,
         city: activeClient.city,
@@ -261,9 +314,11 @@ export default function CreateInvoicePage() {
       subtotal,
       taxRate,
       taxAmount,
+      discountPercent: applyDiscount ? discountPercent : 0,
+      currency: invoiceCurrency,
       amount: totalTTC,
-      paidAmount: status === "payee" ? totalTTC : 0,
-      status,
+      paidAmount: finalStatus === "payee" ? totalTTC : 0,
+      status: finalStatus,
       paymentMethod,
       items,
       notes,
@@ -552,7 +607,7 @@ export default function CreateInvoicePage() {
 
               {/* Currency badge */}
               <span className="px-2.5 py-1 text-[11px] font-mono font-medium rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700">
-                Devise : {currency}
+                Devise : {invoiceCurrency}
               </span>
             </div>
 
@@ -627,7 +682,7 @@ export default function CreateInvoicePage() {
                         Total Ligne
                       </span>
                       <div className="px-3 py-1.5 text-xs font-bold text-neutral-900 dark:text-white bg-neutral-100 dark:bg-neutral-700/60 rounded-lg font-mono">
-                        {formatFCFA(item.total || 0)}
+                        {formatFCFA(item.total || 0, invoiceCurrency)}
                       </div>
                     </div>
                   </div>
@@ -707,25 +762,25 @@ export default function CreateInvoicePage() {
             <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800/80 space-y-2 text-xs">
               <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
                 <span>Sous-total Brut HT :</span>
-                <span className="font-mono">{formatFCFA(rawSubtotal)}</span>
+                <span className="font-mono">{formatFCFA(rawSubtotal, invoiceCurrency)}</span>
               </div>
 
               {applyDiscount && discountAmount > 0 && (
                 <div className="flex justify-between text-[#c5221f] dark:text-rose-400">
                   <span>Remise ({discountPercent}%) :</span>
-                  <span className="font-mono">- {formatFCFA(discountAmount)}</span>
+                  <span className="font-mono">- {formatFCFA(discountAmount, invoiceCurrency)}</span>
                 </div>
               )}
 
               <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
                 <span>TVA ({taxRate}%) :</span>
-                <span className="font-mono">{formatFCFA(taxAmount)}</span>
+                <span className="font-mono">{formatFCFA(taxAmount, invoiceCurrency)}</span>
               </div>
 
               <div className="pt-2 border-t border-neutral-200 dark:border-neutral-700 flex justify-between items-baseline font-bold text-neutral-900 dark:text-white">
                 <span className="text-sm">Total TTC à Payer :</span>
                 <span className="text-base sm:text-lg font-extrabold font-mono text-neutral-900 dark:text-white">
-                  {formatFCFA(totalTTC)}
+                  {formatFCFA(totalTTC, invoiceCurrency)}
                 </span>
               </div>
             </div>
@@ -795,7 +850,13 @@ export default function CreateInvoicePage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => alert("Lien de paiement Wave/Orange Money généré !")}
+                    onClick={() => {
+                      const inv = createdInvoice || currentPreviewInvoice;
+                      const subject = `Facture ${inv.number} — ${organization.name}`;
+                      const body = `Bonjour,\n\nVeuillez trouver ci-joint la facture ${inv.number} d'un montant de ${formatFCFA(inv.amount, inv.currency || organization.currency)}, à régler avant le ${formatDate(inv.dueDate)}.\n\nCordialement,\n${organization.legalName || organization.name}`;
+                      window.location.href = `mailto:${encodeURIComponent(inv.client.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                    }}
+                    title="Ouvrir un email pré-rempli pour le client (joignez le PDF téléchargé)"
                     className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 hover:bg-neutral-900 hover:text-white dark:hover:bg-white dark:hover:text-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-none transition-colors"
                   >
                     <Mail className="w-3.5 h-3.5" />
@@ -833,8 +894,10 @@ export default function CreateInvoicePage() {
                       {organization.legalName}
                     </p>
                     <p className="text-neutral-500">{organization.email}</p>
-                    <p className="text-neutral-400">{organization.address}, {organization.city}</p>
-                    <p className="text-neutral-400 font-mono text-[10px]">{organization.taxId} · RCCM {organization.rccm}</p>
+                    <p className="text-neutral-400">{joinParts([organization.address, organization.city], ", ")}</p>
+                    <p className="text-neutral-400 font-mono text-[10px]">
+                      {joinParts([organization.taxId, organization.rccm && `RCCM ${organization.rccm}`])}
+                    </p>
                   </div>
 
                   <div>
@@ -904,10 +967,10 @@ export default function CreateInvoicePage() {
                             {item.quantity}
                           </td>
                           <td className="py-2.5 text-right text-neutral-500 font-mono">
-                            {formatFCFA(item.unitPrice)}
+                            {formatFCFA(item.unitPrice, invoiceCurrency)}
                           </td>
                           <td className="py-2.5 text-right font-semibold text-neutral-900 dark:text-white font-mono">
-                            {formatFCFA(item.total)}
+                            {formatFCFA(item.total, invoiceCurrency)}
                           </td>
                         </tr>
                       ))}
@@ -919,25 +982,25 @@ export default function CreateInvoicePage() {
                 <div className="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/60 dark:border-neutral-700/60 space-y-2 text-xs">
                   <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
                     <span>Sous-total Brut HT :</span>
-                    <span className="font-mono font-medium">{formatFCFA(subtotal)}</span>
+                    <span className="font-mono font-medium">{formatFCFA(subtotal, invoiceCurrency)}</span>
                   </div>
 
                   {applyDiscount && discountAmount > 0 && (
                     <div className="flex justify-between text-[#c5221f] dark:text-rose-400">
                       <span>Remise ({discountPercent}%) :</span>
-                      <span className="font-mono font-medium">- {formatFCFA(discountAmount)}</span>
+                      <span className="font-mono font-medium">- {formatFCFA(discountAmount, invoiceCurrency)}</span>
                     </div>
                   )}
 
                   <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
                     <span>TVA ({taxRate}%) :</span>
-                    <span className="font-mono font-medium">{formatFCFA(taxAmount)}</span>
+                    <span className="font-mono font-medium">{formatFCFA(taxAmount, invoiceCurrency)}</span>
                   </div>
 
                   <div className="pt-2.5 border-t border-neutral-200 dark:border-neutral-700 flex justify-between items-baseline font-bold text-neutral-900 dark:text-white">
                     <span className="text-xs uppercase tracking-wide">Total TTC Net :</span>
                     <span className="text-base sm:text-lg font-extrabold font-mono text-neutral-900 dark:text-white">
-                      {formatFCFA(totalTTC)}
+                      {formatFCFA(totalTTC, invoiceCurrency)}
                     </span>
                   </div>
                 </div>
@@ -1160,7 +1223,7 @@ export default function CreateInvoicePage() {
                   Total TTC Net :
                 </span>
                 <span className="font-mono font-extrabold text-base sm:text-lg text-neutral-900 dark:text-white">
-                  {formatFCFA(createdInvoice.amount)}
+                  {formatFCFA(createdInvoice.amount, invoiceCurrency)}
                 </span>
               </div>
             </div>
@@ -1238,15 +1301,11 @@ export default function CreateInvoicePage() {
                 </p>
               </div>
             </div>
-            <p className="text-xs text-neutral-600 mt-2">
-              {organization.address}, {organization.city} · {organization.country}
-            </p>
-            <p className="text-xs text-neutral-500 font-mono">
-              {organization.taxId} · RCCM {organization.rccm}
-            </p>
-            <p className="text-xs text-neutral-500">
-              Tél : {organization.phone} · Email : {organization.email}
-            </p>
+            {organizationHeaderLines(organization).map((line, i) => (
+              <p key={i} className={i === 0 ? "text-xs text-neutral-600 mt-2" : "text-xs text-neutral-500"}>
+                {line}
+              </p>
+            ))}
           </div>
 
           <div className="text-right space-y-1">
@@ -1256,9 +1315,9 @@ export default function CreateInvoicePage() {
             <p className="text-sm font-mono font-bold text-neutral-800">
               {createdInvoice?.number || invoiceNumber}
             </p>
-            <p className="text-xs text-neutral-500">Devise : FCFA (XOF)</p>
+            <p className="text-xs text-neutral-500">Devise : {getCurrencyLabel(invoiceCurrency)}</p>
             <div className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold border mt-1 border-neutral-300 text-neutral-700">
-              Statut : {(createdInvoice?.status || "envoyee").toUpperCase()}
+              Statut : {STATUS_LABELS[createdInvoice?.status || "envoyee"].toUpperCase()}
             </div>
           </div>
         </div>
@@ -1276,11 +1335,14 @@ export default function CreateInvoicePage() {
               {createdInvoice?.client.email || activeClient?.email || ""}
             </p>
             <p className="text-neutral-600">
-              {(createdInvoice?.client.address || activeClient?.address)
-                ? `${createdInvoice?.client.address || activeClient?.address}, `
-                : ""}
-              {createdInvoice?.client.city || activeClient?.city || ""},{" "}
-              {createdInvoice?.client.country || activeClient?.country || "Sénégal"}
+              {joinParts(
+                [
+                  createdInvoice?.client.address || activeClient?.address,
+                  createdInvoice?.client.city || activeClient?.city,
+                  createdInvoice?.client.country || activeClient?.country,
+                ],
+                ", "
+              )}
             </p>
             {(createdInvoice?.client.phone || activeClient?.phone) && (
               <p className="text-neutral-500 font-mono mt-0.5">
@@ -1319,7 +1381,7 @@ export default function CreateInvoicePage() {
                 <th className="py-2.5 px-4">Description</th>
                 <th className="py-2.5 px-3 text-center">Qté</th>
                 <th className="py-2.5 px-3 text-right">Prix Unitaire HT</th>
-                <th className="py-2.5 px-4 text-right">Total HT (FCFA)</th>
+                <th className="py-2.5 px-4 text-right">Total HT ({getCurrencySymbol(invoiceCurrency)})</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-200">
@@ -1332,10 +1394,10 @@ export default function CreateInvoicePage() {
                     {item.quantity}
                   </td>
                   <td className="py-3 px-3 text-right text-neutral-600 font-mono">
-                    {formatFCFA(item.unitPrice)}
+                    {formatFCFA(item.unitPrice, invoiceCurrency)}
                   </td>
                   <td className="py-3 px-4 text-right font-bold text-neutral-900 font-mono">
-                    {formatFCFA(item.total)}
+                    {formatFCFA(item.total, invoiceCurrency)}
                   </td>
                 </tr>
               ))}
@@ -1349,19 +1411,19 @@ export default function CreateInvoicePage() {
             <div className="flex justify-between text-neutral-600">
               <span>Sous-total Brut HT :</span>
               <span className="font-mono font-medium">
-                {formatFCFA(createdInvoice?.subtotal || subtotal)}
+                {formatFCFA(createdInvoice?.subtotal || subtotal, invoiceCurrency)}
               </span>
             </div>
             <div className="flex justify-between text-neutral-600">
               <span>TVA ({createdInvoice?.taxRate ?? taxRate}%) :</span>
               <span className="font-mono font-medium">
-                {formatFCFA(createdInvoice?.taxAmount || taxAmount)}
+                {formatFCFA(createdInvoice?.taxAmount || taxAmount, invoiceCurrency)}
               </span>
             </div>
             <div className="pt-2 border-t border-neutral-300 flex justify-between items-baseline font-bold text-neutral-900">
               <span className="text-xs uppercase tracking-wide">Total TTC Net :</span>
               <span className="font-extrabold font-mono text-base text-neutral-900">
-                {formatFCFA(createdInvoice?.amount || totalTTC)}
+                {formatFCFA(createdInvoice?.amount || totalTTC, invoiceCurrency)}
               </span>
             </div>
           </div>
@@ -1393,7 +1455,7 @@ export default function CreateInvoicePage() {
                 : "Règlement à réception"}
             </p>
             <p className="text-[11px] text-neutral-500 font-mono">
-              {organization.legalName} · {organization.city}, {organization.country}
+              {joinParts([organization.legalName, joinParts([organization.city, organization.country], ", ")])}
             </p>
           </div>
 

@@ -19,7 +19,7 @@ import {
   UserCheck,
 } from "lucide-react";
 import { useData } from "@/lib/data-context";
-import { formatFCFA } from "@/lib/utils";
+import { formatCurrency, sumByCurrency } from "@/lib/utils";
 import { Client } from "@/lib/mock-data";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Pagination } from "@/components/ui/pagination";
@@ -30,7 +30,7 @@ const ITEMS_PER_PAGE = 20;
 
 export default function ClientsPage() {
   const router = useRouter();
-  const { clients, addClient, updateClient, deleteClient, isLoading } = useData();
+  const { clients, addClient, updateClient, deleteClient, organization, isLoading } = useData();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -55,8 +55,8 @@ export default function ClientsPage() {
     return clients.filter((c) => {
       return (
         c.name.toLowerCase().includes(q) ||
-        c.email.toLowerCase().includes(q) ||
-        c.city.toLowerCase().includes(q) ||
+        c.email?.toLowerCase().includes(q) ||
+        c.city?.toLowerCase().includes(q) ||
         (c.address && c.address.toLowerCase().includes(q)) ||
         (c.phone && c.phone.includes(q))
       );
@@ -76,7 +76,16 @@ export default function ClientsPage() {
   };
 
   const totalClientsCount = clients.length;
-  const totalVolumeInvoiced = clients.reduce((sum, c) => sum + (c.totalInvoiced || 0), 0);
+  // Volume global par devise (on n'additionne jamais des GNF et des FCFA)
+  const defaultCurrency = organization.currency || "XOF";
+  const totalVolumeInvoiced = sumByCurrency(
+    clients.flatMap((c) => (c.totalsByCurrency || []).map((t) => ({ amount: t.total, currency: t.currency }))),
+    defaultCurrency
+  );
+  const renderTotals = (totals: { currency: string; total: number }[] | undefined) =>
+    (totals?.length ? totals : [{ currency: defaultCurrency, total: 0 }]).map((t) => (
+      <span key={t.currency} className="block">{formatCurrency(t.total, t.currency)}</span>
+    ));
   const activeClientsCount = clients.filter((c) => c.status === "actif").length;
 
   const handleOpenAdd = () => {
@@ -229,7 +238,7 @@ export default function ClientsPage() {
             Volume Global Facturé
           </p>
           <p className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white font-mono">
-            {formatFCFA(totalVolumeInvoiced)}
+            {renderTotals(totalVolumeInvoiced)}
           </p>
           <p className="text-[10px] text-neutral-400">Total cumulé émis</p>
         </div>
@@ -352,9 +361,9 @@ export default function ClientsPage() {
                         </span>
                       </td>
 
-                      {/* Total Invoiced FCFA */}
+                      {/* Total Invoiced, one line per currency */}
                       <td className="py-3.5 px-3 text-right whitespace-nowrap font-bold text-neutral-900 dark:text-white font-mono text-xs">
-                        {formatFCFA(client.totalInvoiced || 0)}
+                        {renderTotals(client.totalsByCurrency)}
                       </td>
 
                       {/* Three Dots Crash-Proof Actions Dropdown */}

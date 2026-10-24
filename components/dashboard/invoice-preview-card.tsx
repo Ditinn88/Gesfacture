@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Mail, Download, Send, CheckCircle2, Check, Printer } from "lucide-react";
 import { Invoice } from "@/lib/mock-data";
-import { formatFCFA, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, joinParts } from "@/lib/utils";
 import { useData } from "@/lib/data-context";
 import { useAuth } from "@/lib/auth-context";
 import { printInvoice } from "@/lib/print-invoice";
@@ -23,6 +23,8 @@ export function InvoicePreviewCard({
   const { user } = useAuth();
   const [isSending, setIsSending] = useState(false);
   const [isSent, setIsSent] = useState(false);
+
+  const invoiceCurrency = invoice.currency || organization?.currency || "XOF";
 
   const signatureName = user?.user_metadata?.full_name || organization.legalName || "Direction";
   const signatureRole = "Direction Générale";
@@ -130,8 +132,10 @@ export function InvoicePreviewCard({
               {organization.legalName}
             </p>
             <p className="text-neutral-400">{organization.email}</p>
-            <p className="text-neutral-400">{organization.address}, {organization.city}</p>
-            <p className="text-neutral-400 text-[10px]">{organization.taxId} · RCCM {organization.rccm}</p>
+            <p className="text-neutral-400">{joinParts([organization.address, organization.city], ", ")}</p>
+            <p className="text-neutral-400 text-[10px]">
+              {joinParts([organization.taxId, organization.rccm && `RCCM ${organization.rccm}`])}
+            </p>
           </div>
 
           <div>
@@ -190,10 +194,10 @@ export function InvoicePreviewCard({
                   </td>
                   <td className="py-2 text-center text-neutral-500">{item.quantity}</td>
                   <td className="py-2 text-right text-neutral-500 font-mono">
-                    {formatFCFA(item.unitPrice)}
+                    {formatCurrency(item.unitPrice, invoiceCurrency)}
                   </td>
                   <td className="py-2 text-right font-semibold text-neutral-900 dark:text-white font-mono">
-                    {formatFCFA(item.total || item.quantity * item.unitPrice)}
+                    {formatCurrency(item.total || item.quantity * item.unitPrice, invoiceCurrency)}
                   </td>
                 </tr>
               ))}
@@ -205,16 +209,16 @@ export function InvoicePreviewCard({
         <div className="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/60 dark:border-neutral-700/60 space-y-2 text-xs">
           <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
             <span>Sous-total HT :</span>
-            <span className="font-mono font-medium">{formatFCFA(subtotal)}</span>
+            <span className="font-mono font-medium">{formatCurrency(subtotal, invoiceCurrency)}</span>
           </div>
           <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
             <span>TVA ({invoice.taxRate ?? 18}%) :</span>
-            <span className="font-mono font-medium">{formatFCFA(taxAmount)}</span>
+            <span className="font-mono font-medium">{formatCurrency(taxAmount, invoiceCurrency)}</span>
           </div>
           <div className="pt-2.5 border-t border-neutral-200 dark:border-neutral-700 flex justify-between items-baseline font-bold text-neutral-900 dark:text-white">
             <span className="text-xs uppercase tracking-wide">Total TTC Net :</span>
             <span className="text-base font-extrabold font-mono text-neutral-900 dark:text-white">
-              {formatFCFA(invoice.amount)}
+              {formatCurrency(invoice.amount, invoiceCurrency)}
             </span>
           </div>
         </div>

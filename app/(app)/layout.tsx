@@ -6,8 +6,8 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { SearchProvider } from "@/lib/search-context";
 import { DataProvider } from "@/lib/data-context";
-import { AuthProvider } from "@/lib/auth-context";
 import { AuthModal } from "@/components/auth/auth-modal";
+import { SyncErrorBanner } from "@/components/layout/sync-error-banner";
 
 export default function AppLayout({
   children,
@@ -48,6 +48,7 @@ export default function AppLayout({
 
             {/* Page Content */}
             <main className="flex-1 p-4 sm:p-6 lg:p-7 max-w-[1680px] w-full">
+              <SyncErrorBanner />
               {children}
             </main>
           </div>
