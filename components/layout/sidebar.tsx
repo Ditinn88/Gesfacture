@@ -15,6 +15,10 @@ import {
   LogIn,
   LogOut,
   User as UserIcon,
+  CreditCard,
+  Wallet,
+  BarChart3,
+  PiggyBank,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
@@ -83,6 +87,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </svg>
       ),
     },
+    { name: "Paiements", href: "/payments", icon: <CreditCard className="w-4 h-4" /> },
+    { name: "Trésorerie", href: "/wallet", icon: <Wallet className="w-4 h-4" /> },
+    { name: "Rapports & TVA", href: "/reports", icon: <BarChart3 className="w-4 h-4" /> },
+    { name: "Budget", href: "/budgeting", icon: <PiggyBank className="w-4 h-4" /> },
   ];
 
   const utilitairesItems = [

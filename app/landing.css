@@ -7,8 +7,8 @@
 .bg-grid-pattern {
   background-size: 40px 40px;
   background-image: 
-    linear-gradient(to right, rgba(24, 7, 56, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(24, 7, 56, 0.03) 1px, transparent 1px);
+    linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
 }
 
 /* Hero Typography */
@@ -112,14 +112,14 @@
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
-  background-color: #110829;
+  background-color: #171717;
   color: #ffffff;
   padding: 0.6rem 1.45rem;
   border-radius: 9999px;
   font-size: 0.85rem;
   font-weight: 600;
   letter-spacing: -0.01em;
-  box-shadow: 0 8px 18px -4px rgba(17, 8, 41, 0.28);
+  box-shadow: 0 8px 18px -4px rgba(0, 0, 0, 0.28);
   transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
               box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
               background-color 0.2s ease;
@@ -149,9 +149,9 @@
 /* Hover state: Lift, Scale & Shimmer */
 .hero-cta-btn:hover {
   transform: translateY(-2px) scale(1.04);
-  background-color: #1a0e3a;
-  box-shadow: 0 16px 36px -6px rgba(17, 8, 41, 0.48), 
-              0 0 20px rgba(79, 70, 229, 0.3);
+  background-color: #262626;
+  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.48), 
+              0 0 20px rgba(0, 0, 0, 0.3);
 }
 
 .hero-cta-btn:hover::before {
@@ -165,8 +165,8 @@
 /* Click / Active state: Tactile depress & Ripple */
 .hero-cta-btn:active {
   transform: translateY(1px) scale(0.96);
-  box-shadow: 0 6px 14px -3px rgba(17, 8, 41, 0.35);
-  background-color: #0d0620;
+  box-shadow: 0 6px 14px -3px rgba(0, 0, 0, 0.35);
+  background-color: #0a0a0a;
 }
 
 .hero-cta-btn .cta-arrow-icon {
@@ -192,7 +192,7 @@
 }
 
 .floating-navbar:hover {
-  box-shadow: 0 22px 50px -10px rgba(17, 8, 41, 0.16), 0 2px 8px -1px rgba(17, 8, 41, 0.05);
+  box-shadow: 0 22px 50px -10px rgba(0, 0, 0, 0.16), 0 2px 8px -1px rgba(0, 0, 0, 0.05);
 }
 
 /* Mobile Menu Drawer Animation */
@@ -216,12 +216,12 @@
    ========================================================================== */
 
 .invoice-preview-card {
-  box-shadow: 0 24px 60px -15px rgba(17, 8, 41, 0.12), 0 0 1px 1px rgba(17, 8, 41, 0.06);
+  box-shadow: 0 24px 60px -15px rgba(0, 0, 0, 0.12), 0 0 1px 1px rgba(0, 0, 0, 0.06);
   transition: box-shadow 0.3s ease;
 }
 
 .invoice-preview-card:hover {
-  box-shadow: 0 30px 70px -15px rgba(17, 8, 41, 0.16), 0 0 1px 1px rgba(17, 8, 41, 0.08);
+  box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.16), 0 0 1px 1px rgba(0, 0, 0, 0.08);
 }
 
 .invoice-floating-card-shadow {
@@ -236,8 +236,8 @@
 
 .card-hover-lift:hover {
   transform: translateY(-4px);
-  border-color: rgba(79, 70, 229, 0.25);
-  box-shadow: 0 20px 40px -15px rgba(24, 7, 56, 0.1), 0 0 1px 1px rgba(24, 7, 56, 0.06);
+  border-color: rgba(0, 0, 0, 0.25);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.1), 0 0 1px 1px rgba(0, 0, 0, 0.06);
 }
 
 /* Currency buttons */
@@ -247,7 +247,7 @@
 
 .currency-btn.active {
   background-color: #ffffff;
-  color: #0b041c;
+  color: #0a0a0a;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 

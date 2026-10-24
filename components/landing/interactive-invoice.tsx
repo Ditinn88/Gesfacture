@@ -124,7 +124,7 @@ export function InteractiveInvoice() {
 
   return (
     <div
-      className="mt-6 sm:mt-10 text-left max-w-4xl mx-auto bg-white rounded-3xl border border-slate-200/90 shadow-2xl p-5 sm:p-10 relative invoice-preview-card"
+      className="mt-6 sm:mt-10 text-left max-w-4xl mx-auto bg-white rounded-3xl border border-neutral-200/90 shadow-2xl p-5 sm:p-10 relative invoice-preview-card"
       data-purpose="interactive-dashboard-mockup"
       id="interactive-invoice"
     >
@@ -142,28 +142,28 @@ export function InteractiveInvoice() {
       </div>
 
       {/* Mockup Header Controls */}
-      <div className="flex flex-wrap items-center justify-between border-b border-slate-100 pb-5 sm:pb-6 gap-4">
+      <div className="flex flex-wrap items-center justify-between border-b border-neutral-100 pb-5 sm:pb-6 gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-brand-deep text-white flex items-center justify-center font-bold text-lg shadow-sm">
             GF
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-bold text-slate-900 text-base sm:text-lg">
+              <h3 className="font-bold text-neutral-900 text-base sm:text-lg">
                 FACTURE N° 2026-084
               </h3>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
                 Prête à envoyer
               </span>
             </div>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-neutral-500">
               Émise aujourd'hui • Échéance: à réception
             </p>
           </div>
         </div>
 
         {/* Currency Switcher */}
-        <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-semibold text-slate-600">
+        <div className="flex items-center bg-neutral-100 p-1 rounded-xl text-xs font-semibold text-neutral-600">
           {(["FCFA", "EUR", "USD"] as Currency[]).map((c) => (
             <button
               key={c}
@@ -172,7 +172,7 @@ export function InteractiveInvoice() {
               className={`currency-btn px-3 py-1.5 rounded-lg transition-all ${
                 currency === c
                   ? "active bg-white text-brand-navy shadow-sm"
-                  : "text-slate-500 hover:text-brand-navy"
+                  : "text-neutral-500 hover:text-brand-navy"
               }`}
             >
               {c === "FCFA" ? "FCFA (XOF)" : c === "EUR" ? "EUR (€)" : "USD ($)"}
@@ -183,24 +183,24 @@ export function InteractiveInvoice() {
 
       {/* Billing Info Grid — Real Professional Data */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 my-5 sm:my-6 text-sm">
-        <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-100">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+        <div className="bg-neutral-50/70 p-4 rounded-2xl border border-neutral-100">
+          <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">
             Émetteur
           </span>
-          <p className="font-bold text-slate-900">{issuerName}</p>
-          <p className="text-slate-500 text-xs">{issuerTaxId}</p>
-          <p className="text-slate-500 text-xs">{issuerAddress}</p>
-          <p className="text-indigo-600 font-medium text-xs mt-0.5">{issuerEmail}</p>
+          <p className="font-bold text-neutral-900">{issuerName}</p>
+          <p className="text-neutral-500 text-xs">{issuerTaxId}</p>
+          <p className="text-neutral-500 text-xs">{issuerAddress}</p>
+          <p className="text-neutral-900 font-medium text-xs mt-0.5">{issuerEmail}</p>
         </div>
 
-        <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-100">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+        <div className="bg-neutral-50/70 p-4 rounded-2xl border border-neutral-100">
+          <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">
             Client Facturé
           </span>
-          <p className="font-bold text-slate-900">Société Africaine de Distribution & Services (SADS SA)</p>
-          <p className="text-slate-500 text-xs">Immeuble Horizon, Boulevard VGE • Abidjan, Côte d'Ivoire</p>
-          <p className="text-slate-500 text-xs">RCCM : CI-ABJ-2024-B-8921 • NIF : 2108420-A</p>
-          <p className="text-indigo-600 font-medium text-xs mt-0.5">comptabilite@sads-afrique.com</p>
+          <p className="font-bold text-neutral-900">Société Africaine de Distribution & Services (SADS SA)</p>
+          <p className="text-neutral-500 text-xs">Immeuble Horizon, Boulevard VGE • Abidjan, Côte d'Ivoire</p>
+          <p className="text-neutral-500 text-xs">RCCM : CI-ABJ-2024-B-8921 • NIF : 2108420-A</p>
+          <p className="text-neutral-900 font-medium text-xs mt-0.5">comptabilite@sads-afrique.com</p>
         </div>
       </div>
 
@@ -208,22 +208,22 @@ export function InteractiveInvoice() {
       <div className="overflow-x-auto -mx-2 sm:mx-0">
         <table className="w-full text-left text-sm min-w-[560px]">
           <thead>
-            <tr className="border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <tr className="border-b border-neutral-200 text-xs font-bold text-neutral-400 uppercase tracking-wider">
               <th className="py-3 pr-4">Description de la prestation</th>
               <th className="py-3 px-3 text-center w-24">Quantité</th>
               <th className="py-3 px-3 text-right w-36">Prix Unit. HT</th>
               <th className="py-3 pl-3 text-right w-36">Total HT</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-neutral-100">
             {items.map((item) => {
               const currentPrice = item.prices[currency] || 0;
               const rowTotal = item.quantity * currentPrice;
               return (
                 <tr key={item.id}>
                   <td className="py-3.5 pr-4">
-                    <p className="font-semibold text-slate-800">{item.title}</p>
-                    <span className="text-xs text-slate-400">{item.subtitle}</span>
+                    <p className="font-semibold text-neutral-800">{item.title}</p>
+                    <span className="text-xs text-neutral-400">{item.subtitle}</span>
                   </td>
                   <td className="py-3.5 px-3 text-center">
                     <input
@@ -234,7 +234,7 @@ export function InteractiveInvoice() {
                       onChange={(e) =>
                         handleQuantityChange(item.id, parseInt(e.target.value) || 1)
                       }
-                      className="w-16 text-center text-sm border-slate-200 rounded-lg p-1 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-indigo-500 font-medium"
+                      className="w-16 text-center text-sm border-neutral-200 rounded-lg p-1 bg-neutral-50 focus:bg-white focus:ring-1 focus:ring-neutral-700 font-medium"
                       aria-label="Quantité"
                     />
                   </td>
@@ -247,13 +247,13 @@ export function InteractiveInvoice() {
                         onChange={(e) =>
                           handlePriceChange(item.id, parseFloat(e.target.value) || 0)
                         }
-                        className="w-24 text-right text-sm border-slate-200 rounded-lg p-1 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-indigo-500 font-mono font-medium"
+                        className="w-24 text-right text-sm border-neutral-200 rounded-lg p-1 bg-neutral-50 focus:bg-white focus:ring-1 focus:ring-neutral-700 font-mono font-medium"
                         aria-label="Prix Unitaire"
                       />
-                      <span className="text-xs text-slate-400 font-mono">{currencySymbols[currency]}</span>
+                      <span className="text-xs text-neutral-400 font-mono">{currencySymbols[currency]}</span>
                     </div>
                   </td>
-                  <td className="py-3.5 pl-3 text-right font-mono font-semibold text-slate-900 whitespace-nowrap">
+                  <td className="py-3.5 pl-3 text-right font-mono font-semibold text-neutral-900 whitespace-nowrap">
                     {formatNumber(rowTotal)} {currencySymbols[currency]}
                   </td>
                 </tr>
@@ -264,15 +264,15 @@ export function InteractiveInvoice() {
       </div>
 
       {/* Total Calculation Breakdown */}
-      <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+      <div className="mt-6 pt-4 border-t border-neutral-100 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         {/* Payment Methods Badges */}
         <div className="w-full md:w-auto">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">
+          <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider block mb-2">
             Options de règlement intégrées
           </span>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-sky-50 text-sky-700 rounded-lg text-xs font-semibold border border-sky-200">
-              <span className="w-2 h-2 rounded-full bg-sky-500"></span> Wave QR Code
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-neutral-100 text-neutral-800 rounded-lg text-xs font-semibold border border-neutral-200">
+              <span className="w-2 h-2 rounded-full bg-neutral-700"></span> Wave QR Code
             </span>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-50 text-orange-700 rounded-lg text-xs font-semibold border border-orange-200">
               <span className="w-2 h-2 rounded-full bg-orange-500"></span> Orange Money
@@ -284,27 +284,27 @@ export function InteractiveInvoice() {
         </div>
 
         {/* Totals Box */}
-        <div className="w-full md:w-72 bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2">
-          <div className="flex justify-between text-xs text-slate-500">
+        <div className="w-full md:w-72 bg-neutral-50 p-4 rounded-2xl border border-neutral-100 space-y-2">
+          <div className="flex justify-between text-xs text-neutral-500">
             <span>Total HT</span>
-            <span className="font-mono font-medium text-slate-700">
+            <span className="font-mono font-medium text-neutral-700">
               {formatNumber(subtotal)} {currencySymbols[currency]}
             </span>
           </div>
 
-          <div className="flex justify-between text-xs text-slate-500">
+          <div className="flex justify-between text-xs text-neutral-500">
             <span className="flex items-center gap-1">
               TVA légale (18%)
-              <span className="text-[10px] text-indigo-600 bg-indigo-50 px-1 rounded font-bold">
+              <span className="text-[10px] text-neutral-900 bg-neutral-100 px-1 rounded font-bold">
                 Auto
               </span>
             </span>
-            <span className="font-mono font-medium text-slate-700">
+            <span className="font-mono font-medium text-neutral-700">
               {formatNumber(tva)} {currencySymbols[currency]}
             </span>
           </div>
 
-          <div className="border-t border-slate-200 pt-2 flex justify-between text-sm font-extrabold text-brand-navy">
+          <div className="border-t border-neutral-200 pt-2 flex justify-between text-sm font-extrabold text-brand-navy">
             <span>Total TTC à payer</span>
             <span className="font-mono text-base text-brand-deep">
               {formatNumber(totalTTC)} {currencySymbols[currency]}
@@ -314,8 +314,8 @@ export function InteractiveInvoice() {
       </div>
 
       {/* Bottom Action in Mockup */}
-      <div className="mt-8 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
-        <span className="text-xs text-slate-400">
+      <div className="mt-8 pt-4 border-t border-neutral-100 flex flex-wrap items-center justify-between gap-4">
+        <span className="text-xs text-neutral-400">
           💡 Modifiez les quantités ou prix pour voir le calcul automatique en direct.
         </span>
 
@@ -323,7 +323,7 @@ export function InteractiveInvoice() {
           type="button"
           onClick={handleCopyLink}
           className={`inline-flex items-center gap-2 text-xs font-bold text-white px-4 py-2.5 rounded-xl shadow transition-all duration-200 ${
-            copied ? "bg-emerald-600 scale-105" : "bg-indigo-600 hover:bg-indigo-700"
+            copied ? "bg-emerald-600 scale-105" : "bg-neutral-900 hover:bg-neutral-800"
           }`}
         >
           {copied ? (

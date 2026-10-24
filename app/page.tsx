@@ -29,7 +29,7 @@ export default function LandingPage() {
       ></div>
       <div
         aria-hidden="true"
-        className="fixed -top-32 left-1/2 -translate-x-1/2 w-[800px] h-[450px] bg-gradient-to-tr from-purple-100/40 via-indigo-50/30 to-transparent blur-3xl pointer-events-none z-0"
+        className="fixed -top-32 left-1/2 -translate-x-1/2 w-[800px] h-[450px] bg-gradient-to-tr from-neutral-100/40 via-neutral-100/30 to-transparent blur-3xl pointer-events-none z-0"
       ></div>
 
       {/* Floating Pill Navigation */}

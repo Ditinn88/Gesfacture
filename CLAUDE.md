@@ -36,7 +36,7 @@ npx tsc --noEmit     # vérification de types seule
 
 **Types de domaine** : définis dans `lib/mock-data.ts` (`Invoice`, `Client`, `Organization`, `DEFAULT_ORGANIZATION`) malgré le nom du fichier. Statuts en codes français : facture `payee | envoyee | brouillon | en_retard`, client `actif | inactif`. Le client est copié en JSONB dans chaque facture (`invoice.client`). Chaque facture porte sa devise (`currency`, défaut : celle de l'organisation) : passer `invoice.currency` à `formatFCFA` / `formatCurrency` pour tout affichage propre à une facture. Ne jamais additionner des montants de devises différentes : regrouper avec `sumByCurrency` et afficher avec `components/ui/currency-totals.tsx` ; graphiques et taux portent sur `resolveInvoicesCurrency` (devise la plus utilisée). Le `subtotal` stocké est déjà remisé (`discountPercent`).
 
-**Schéma Supabase** (`supabase/schema.sql`, idempotent : peut être relancé sur une base existante) : 3 tables à plat (`organizations`, `clients`, `invoices`), montants en `NUMERIC`. Chaque ligne a un `user_id` (défaut `auth.uid()`) et les politiques RLS limitent l'accès aux lignes de l'utilisateur connecté. L'organisation d'un utilisateur a pour `id` son identifiant de compte. Un trigger auto-confirme les emails des nouveaux inscrits.
+**Schéma Supabase** (`supabase/schema.sql`, idempotent : peut être relancé sur une base existante) : 3 tables à plat (`organizations`, `clients`, `invoices`), montants en `NUMERIC`. Chaque ligne a un `user_id` (défaut `auth.uid()`) et les politiques RLS limitent l'accès aux lignes de l'utilisateur connecté. L'organisation d'un utilisateur a pour `id` son identifiant de compte. Les inscrits confirment leur email (le script supprime l'ancien trigger d'auto-confirmation ; « Confirm email » doit être activé dans Supabase).
 
 **Auth** (`lib/auth-context.tsx`) : `AuthProvider` dans le layout racine (`app/layout.tsx`), donc disponible dans `DataProvider`. L'utilisateur est mis en cache dans localStorage (`gesfacture_local_auth_user_v6`). Les routes ne sont pas protégées : les pages lisent `useAuth().user` et ouvrent `AuthModal` via `openAuthModal()`. Les messages d'erreur Supabase sont traduits en français dans le contexte.
 
@@ -49,7 +49,7 @@ npx tsc --noEmit     # vérification de types seule
 ## Système de design (obligatoire)
 
 `AGENTS.md` (copie dans `.agents/rules/design-system.md`) est la règle absolue pour toute l'UI ; le lire avant de créer ou modifier un composant. Points essentiels :
-- Palette `neutral-*` uniquement : jamais de `slate-*`, `blue-*` ni d'anneau de focus bleu. Flat design, `shadow-none` par défaut.
+- Palette `neutral-*` uniquement, landing et page de connexion comprises : jamais de `slate-*`, `blue-*`, `indigo-*`, `violet-*` ni d'anneau de focus bleu (la palette `brand` de `tailwind.config.js` est elle aussi neutre). Flat design, `shadow-none` par défaut.
 - Canvas `bg-[#fafaf9] dark:bg-[#121212]`, cartes `bg-white dark:bg-neutral-900` avec bordure `neutral-200/800`. Mode sombre via `next-themes` (`darkMode: "class"`), chaque classe doit avoir sa variante `dark:`.
 - Montants via `formatFCFA()` (0 décimale, « 1 500 000 FCFA »), alignés à droite en gras ; dates via `formatDate()` (`DD/MM/YYYY`) ; les deux dans `lib/utils.ts` avec `cn()`.
 - Statuts : utiliser `components/ui/status-badge.tsx` (pilules pastel `rounded-full`).

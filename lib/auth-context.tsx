@@ -198,7 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error.message.includes("Invalid login credentials")) {
         friendlyMessage = "Adresse email ou mot de passe incorrect. Vérifiez l'orthographe exacte et la casse de votre mot de passe.";
       } else if (error.message.includes("Email not confirmed")) {
-        friendlyMessage = "Votre adresse email n'est pas encore confirmée. Vérifiez votre boîte de réception ou désactivez « Confirm email » dans votre console Supabase (Authentication > Providers > Email).";
+        friendlyMessage = "Votre adresse email n'est pas encore confirmée. Cliquez sur le lien reçu par email lors de l'inscription (pensez à vérifier vos spams).";
       } else if (error.message.includes("rate limit") || error.message.includes("429")) {
         friendlyMessage = "Limite de requêtes atteinte par Supabase (Rate limit). Veuillez patienter quelques minutes avant de retenter.";
       }
@@ -276,7 +276,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else if (error.message.includes("Password should be")) {
         friendlyMessage = "Le mot de passe doit comporter au moins 6 caractères.";
       } else if (error.message.includes("rate limit") || error.message.includes("429")) {
-        friendlyMessage = "Limite d'envois d'emails atteinte par Supabase (Rate limit). Rendez-vous sur votre console Supabase (Authentication > Providers > Email) et décochez « Confirm email » pour autoriser les inscriptions immédiates.";
+        friendlyMessage = "Trop d'inscriptions en peu de temps : l'email de confirmation n'a pas pu être envoyé. Réessayez dans quelques minutes.";
       }
       return { error: new Error(friendlyMessage) };
     }

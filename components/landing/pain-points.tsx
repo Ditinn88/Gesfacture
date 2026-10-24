@@ -16,14 +16,14 @@ function ProblemCard({
   description,
 }: ProblemCardProps) {
   return (
-    <div className="bg-brand-surface p-7 sm:p-8 rounded-3xl border border-slate-200/80 card-hover-lift">
+    <div className="bg-brand-surface p-7 sm:p-8 rounded-3xl border border-neutral-200/80 card-hover-lift">
       <div
         className={`w-12 h-12 rounded-2xl ${iconBg} ${iconColor} flex items-center justify-center font-bold text-xl mb-6 shadow-sm`}
       >
         {icon}
       </div>
-      <h3 className="font-bold text-lg text-slate-900 mb-2">{title}</h3>
-      <p className="text-slate-600 text-sm leading-relaxed">{description}</p>
+      <h3 className="font-bold text-lg text-neutral-900 mb-2">{title}</h3>
+      <p className="text-neutral-600 text-sm leading-relaxed">{description}</p>
     </div>
   );
 }
@@ -48,8 +48,8 @@ export function PainPoints() {
     },
     {
       icon: "⏳",
-      iconBg: "bg-indigo-50",
-      iconColor: "text-indigo-600",
+      iconBg: "bg-neutral-100",
+      iconColor: "text-neutral-900",
       title: "Relances manuelles embarrassantes",
       description:
         "Perte de trace des créances, relances oubliées et manque de moyens de paiement locaux instantanés pour vos clients.",
@@ -58,18 +58,18 @@ export function PainPoints() {
 
   return (
     <section
-      className="py-16 sm:py-24 bg-white border-y border-slate-100 relative"
+      className="py-16 sm:py-24 bg-white border-y border-neutral-100 relative"
       data-purpose="pain-points-section"
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
-          <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1 rounded-full">
+          <span className="text-xs font-bold text-neutral-900 uppercase tracking-widest bg-neutral-100 px-3 py-1 rounded-full">
             Le constat
           </span>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-brand-navy mt-4 mb-4 tracking-tight">
             Pourquoi 80% des entrepreneurs africains perdent du temps et des revenus
           </h2>
-          <p className="text-slate-500 text-sm sm:text-base">
+          <p className="text-neutral-500 text-sm sm:text-base">
             Gérer une entreprise est déjà exigeant. Ne laissez pas un système de facturation archaïque freiner votre croissance.
           </p>
         </div>

@@ -4,6 +4,7 @@ import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { KpiCards } from "@/components/dashboard/kpi-cards";
 import { RecentInvoices } from "@/components/dashboard/recent-invoices";
+import { RevenueChart } from "@/components/dashboard/revenue-chart";
 import { DashboardDateFilter, DateRange } from "@/components/dashboard/dashboard-date-filter";
 import { useAuth } from "@/lib/auth-context";
 import { useData } from "@/lib/data-context";
@@ -115,6 +116,9 @@ export default function DashboardPage() {
 
       {/* 4 Notion-Style Monochrome KPI Cards filtered dynamically */}
       <KpiCards isLoading={isLoading} invoices={filteredInvoices} />
+
+      {/* Chiffre d'affaires mensuel et principaux clients */}
+      {!isLoading && <RevenueChart invoices={filteredInvoices} />}
 
       {/* Factures Récentes Table filtered dynamically */}
       <RecentInvoices isLoading={isLoading} invoices={filteredInvoices} />

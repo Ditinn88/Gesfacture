@@ -197,13 +197,13 @@ export function AuthModal() {
             className="inline-flex items-center gap-2 group cursor-pointer focus:outline-none transition-transform hover:scale-105"
             title="Retour à la page d'accueil GesFacture"
           >
-            <div className="w-8 h-8 rounded-full bg-[#110829] dark:bg-white flex items-center justify-center text-white dark:text-[#110829] shadow-sm transition-transform duration-200 group-hover:scale-105">
+            <div className="w-8 h-8 rounded-full bg-[#171717] dark:bg-white flex items-center justify-center text-white dark:text-[#171717] shadow-sm transition-transform duration-200 group-hover:scale-105">
               <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                 <path d="M7 2v20l3-2 3 2 3-2 3 2V2l-3 2-3-2-3 2-3-2zm9 13H8v-2h8v2zm0-4H8V9h8v2z" />
               </svg>
             </div>
-            <span className="text-xl sm:text-2xl font-extrabold text-neutral-900 dark:text-white tracking-tight font-sans group-hover:text-indigo-600 transition-colors">
-              Ges<span className="text-indigo-600">Facture</span>
+            <span className="text-xl sm:text-2xl font-extrabold text-neutral-900 dark:text-white tracking-tight font-sans group-hover:text-neutral-900 transition-colors">
+              Ges<span className="text-neutral-900">Facture</span>
             </span>
           </Link>
           <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400">

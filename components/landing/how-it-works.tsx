@@ -15,8 +15,8 @@ function StepItem({ number, badgeBg, title, description }: StepProps) {
       >
         {number}
       </div>
-      <h3 className="text-xl font-bold text-slate-900 mb-2">{title}</h3>
-      <p className="text-slate-600 text-sm leading-relaxed">{description}</p>
+      <h3 className="text-xl font-bold text-neutral-900 mb-2">{title}</h3>
+      <p className="text-neutral-600 text-sm leading-relaxed">{description}</p>
     </div>
   );
 }
@@ -32,7 +32,7 @@ export function HowItWorks() {
     },
     {
       number: "02",
-      badgeBg: "bg-indigo-600",
+      badgeBg: "bg-neutral-900",
       title: "Émettez la facture",
       description:
         "Ajoutez vos prestations, la TVA 18% est calculée automatiquement. Personnalisez les couleurs selon votre marque.",
@@ -48,7 +48,7 @@ export function HowItWorks() {
 
   return (
     <section
-      className="py-16 sm:py-24 bg-white border-t border-slate-100"
+      className="py-16 sm:py-24 bg-white border-t border-neutral-100"
       data-purpose="how-it-works-timeline"
       id="comment-ca-marche"
     >
@@ -60,7 +60,7 @@ export function HowItWorks() {
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-brand-navy mt-4 mb-4 tracking-tight">
             Opérationnel en 3 étapes rapides
           </h2>
-          <p className="text-slate-500 text-sm sm:text-base">
+          <p className="text-neutral-500 text-sm sm:text-base">
             Aucun paramétrage complexe. Vous êtes prêt à émettre votre première facture en moins de 2 minutes.
           </p>
         </div>

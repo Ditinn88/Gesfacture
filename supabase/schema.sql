@@ -109,22 +109,11 @@ CREATE POLICY "own_invoices" ON public.invoices FOR ALL TO authenticated
 --       id      = (SELECT id::text FROM auth.users WHERE email = 'votre@email.com')
 --   WHERE id = 'default' AND user_id IS NULL;
 
--- 5. Auto-confirmation automatique des inscriptions (Supprime le blocage "Email not confirmed")
--- Ce trigger valide instantanément l'adresse email des nouveaux inscrits dans auth.users
-CREATE OR REPLACE FUNCTION public.handle_auto_confirm_user()
-RETURNS trigger AS $$
-BEGIN
-  NEW.email_confirmed_at = COALESCE(NEW.email_confirmed_at, now());
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
+-- 5. Vérification des emails : chaque inscrit confirme son adresse via le lien reçu.
+-- Une ancienne version confirmait automatiquement tous les comptes (n'importe qui pouvait
+-- s'inscrire avec l'email d'un autre) : on retire ce déclencheur.
+-- Côté Supabase : Authentication > Providers > Email > « Confirm email » activé, et l'URL du site
+-- (ex. https://votre-domaine/login) ajoutée dans Authentication > URL Configuration > Redirect URLs.
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-  BEFORE INSERT ON auth.users
-  FOR EACH ROW
-  EXECUTE FUNCTION public.handle_auto_confirm_user();
-
--- Valider immédiatement tous les comptes déjà créés en attente de confirmation
-UPDATE auth.users SET email_confirmed_at = now() WHERE email_confirmed_at IS NULL;
+DROP FUNCTION IF EXISTS public.handle_auto_confirm_user();
 

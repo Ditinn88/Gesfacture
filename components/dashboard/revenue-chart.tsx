@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { useTheme } from "next-themes";
 import { useData } from "@/lib/data-context";
+import { Invoice } from "@/lib/mock-data";
 import { formatCurrency, getCurrencySymbol, isInCurrency, resolveInvoicesCurrency } from "@/lib/utils";
 import { CurrencyTotals } from "@/components/ui/currency-totals";
 import { TrendingUp, Layers, CheckCircle } from "lucide-react";
@@ -21,21 +22,29 @@ const MONTH_NAMES = [
   "Juil", "Août", "Sept", "Oct", "Nov", "Déc"
 ];
 
-export function RevenueChart() {
+interface RevenueChartProps {
+  // Factures à représenter (ex. filtrées par période) ; par défaut toutes les factures
+  invoices?: Invoice[];
+}
+
+export function RevenueChart({ invoices: propInvoices }: RevenueChartProps = {}) {
   const [mounted, setMounted] = useState(false);
   const { theme, resolvedTheme } = useTheme();
-  const { invoices, clients, organization } = useData();
+  const { invoices: contextInvoices, clients, organization } = useData();
+  const invoices = propInvoices ?? contextInvoices;
 
   const activeCurrency = useMemo(() => {
     return resolveInvoicesCurrency(invoices, organization?.currency || "XOF");
   }, [invoices, organization?.currency]);
 
-  // Le graphique et les pourcentages ne portent que sur la devise principale
+  // Le graphique et les pourcentages ne portent que sur les factures émises (hors brouillons)
+  // dans la devise principale
+  const issuedInvoices = useMemo(() => invoices.filter((i) => i.status !== "brouillon"), [invoices]);
   const chartInvoices = useMemo(
-    () => invoices.filter((i) => isInCurrency(i, activeCurrency, organization?.currency || "XOF")),
-    [invoices, activeCurrency, organization?.currency]
+    () => issuedInvoices.filter((i) => isInCurrency(i, activeCurrency, organization?.currency || "XOF")),
+    [issuedInvoices, activeCurrency, organization?.currency]
   );
-  const excludedCount = invoices.length - chartInvoices.length;
+  const excludedCount = issuedInvoices.length - chartInvoices.length;
 
   useEffect(() => {
     setMounted(true);
@@ -216,7 +225,13 @@ export function RevenueChart() {
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 11, fill: isDark ? "#737373" : "#a3a3a3" }}
-                  tickFormatter={(val) => (val >= 1000000 ? `${(val / 1000000).toFixed(0)}M` : `${val}`)}
+                  tickFormatter={(val) =>
+                    val >= 1000000
+                      ? `${(val / 1000000).toLocaleString("fr-FR", { maximumFractionDigits: 1 })}M`
+                      : val >= 1000
+                      ? `${(val / 1000).toLocaleString("fr-FR", { maximumFractionDigits: 0 })}k`
+                      : `${val}`
+                  }
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Area

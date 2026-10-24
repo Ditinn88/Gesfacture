@@ -15,7 +15,7 @@ export function BentoFeatures() {
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-brand-navy mt-4 mb-4 tracking-tight">
             Tout ce dont vous avez besoin pour facturer &amp; être payé
           </h2>
-          <p className="text-slate-500 text-sm sm:text-base">
+          <p className="text-neutral-500 text-sm sm:text-base">
             Des fonctionnalités taillées pour le contexte commercial d'Afrique de l'Ouest et Centrale.
           </p>
         </div>
@@ -24,7 +24,7 @@ export function BentoFeatures() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
           {/* Bento 1: Large feature */}
-          <div className="md:col-span-2 bg-white rounded-3xl p-7 sm:p-10 border border-slate-200/80 shadow-soft-card flex flex-col justify-between card-hover-lift">
+          <div className="md:col-span-2 bg-white rounded-3xl p-7 sm:p-10 border border-neutral-200/80 shadow-soft-card flex flex-col justify-between card-hover-lift">
             <div>
               <div className="w-10 h-10 rounded-xl bg-brand-deep text-white flex items-center justify-center mb-6 shadow-sm">
                 <svg
@@ -38,18 +38,18 @@ export function BentoFeatures() {
                   />
                 </svg>
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-3">
+              <h3 className="text-xl sm:text-2xl font-bold text-neutral-900 mb-3">
                 Factures conformes avec QR Code de certification
               </h3>
-              <p className="text-slate-600 text-sm sm:text-base leading-relaxed max-w-xl">
+              <p className="text-neutral-600 text-sm sm:text-base leading-relaxed max-w-xl">
                 Chaque facture générée embarque un QR Code sécurisé et les mentions obligatoires conformes aux réglementations fiscales de l'UEMOA et CEMAC (NINEA, RCCM, centre fiscal).
               </p>
             </div>
-            <div className="mt-8 pt-6 border-t border-slate-100 flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-500">
+            <div className="mt-8 pt-6 border-t border-neutral-100 flex flex-wrap items-center gap-4 text-xs font-semibold text-neutral-500">
               <span className="flex items-center gap-1.5 text-emerald-600">
                 ✓ Conforme DGI &amp; UEMOA
               </span>
-              <span className="flex items-center gap-1.5 text-indigo-600">
+              <span className="flex items-center gap-1.5 text-neutral-900">
                 ✓ Export PDF Vectoriel
               </span>
             </div>
@@ -73,18 +73,18 @@ export function BentoFeatures() {
               <h3 className="text-xl sm:text-2xl font-bold mb-3">
                 Encaissement Mobile Money natif
               </h3>
-              <p className="text-slate-300 text-sm leading-relaxed">
+              <p className="text-neutral-300 text-sm leading-relaxed">
                 Vos clients paient directement en 1 clic par Wave, Orange Money ou carte bancaire. Les fonds arrivent directement sur votre compte.
               </p>
             </div>
-            <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-between text-xs text-slate-300">
+            <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-between text-xs text-neutral-300">
               <span>Délai d'encaissement</span>
               <span className="font-bold text-emerald-400">Instantané</span>
             </div>
           </div>
 
           {/* Bento 3: Automatic Reminders */}
-          <div className="bg-white rounded-3xl p-7 sm:p-10 border border-slate-200/80 shadow-soft-card flex flex-col justify-between card-hover-lift">
+          <div className="bg-white rounded-3xl p-7 sm:p-10 border border-neutral-200/80 shadow-soft-card flex flex-col justify-between card-hover-lift">
             <div>
               <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-6 shadow-sm">
                 <svg
@@ -98,22 +98,22 @@ export function BentoFeatures() {
                   />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">
+              <h3 className="text-xl font-bold text-neutral-900 mb-2">
                 Relances WhatsApp &amp; SMS
               </h3>
-              <p className="text-slate-600 text-sm leading-relaxed">
+              <p className="text-neutral-600 text-sm leading-relaxed">
                 Programmez des notifications douces par WhatsApp ou SMS avant et après l'échéance. Réduisez vos retards de paiement de 65%.
               </p>
             </div>
-            <div className="mt-6 pt-4 border-t border-slate-100 text-xs font-semibold text-slate-500">
+            <div className="mt-6 pt-4 border-t border-neutral-100 text-xs font-semibold text-neutral-500">
               Zéro friction, vos clients apprécient.
             </div>
           </div>
 
           {/* Bento 4: Multi-currency & SYSCOHADA */}
-          <div className="md:col-span-2 bg-white rounded-3xl p-7 sm:p-10 border border-slate-200/80 shadow-soft-card flex flex-col justify-between card-hover-lift">
+          <div className="md:col-span-2 bg-white rounded-3xl p-7 sm:p-10 border border-neutral-200/80 shadow-soft-card flex flex-col justify-between card-hover-lift">
             <div>
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-6 shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-neutral-100 text-neutral-900 flex items-center justify-center mb-6 shadow-sm">
                 <svg
                   className="w-5 h-5 fill-none stroke-current stroke-2"
                   viewBox="0 0 24 24"
@@ -125,14 +125,14 @@ export function BentoFeatures() {
                   />
                 </svg>
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-3">
+              <h3 className="text-xl sm:text-2xl font-bold text-neutral-900 mb-3">
                 Rapports financiers &amp; Export comptable SYSCOHADA
               </h3>
-              <p className="text-slate-600 text-sm sm:text-base leading-relaxed max-w-xl">
+              <p className="text-neutral-600 text-sm sm:text-base leading-relaxed max-w-xl">
                 Transmettez en un clic vos journaux de ventes et récapitulatifs de TVA collectée à votre expert-comptable au format Excel ou PDF certifié.
               </p>
             </div>
-            <div className="mt-8 pt-6 border-t border-slate-100 flex flex-wrap items-center gap-4 sm:gap-6 text-xs font-semibold text-slate-500">
+            <div className="mt-8 pt-6 border-t border-neutral-100 flex flex-wrap items-center gap-4 sm:gap-6 text-xs font-semibold text-neutral-500">
               <span>Multi-devises (FCFA, EUR, USD)</span>
               <span>• Grand livre des ventes</span>
               <span>• Tableau de bord de trésorerie</span>

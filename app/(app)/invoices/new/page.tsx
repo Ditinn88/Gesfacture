@@ -398,7 +398,7 @@ function CreateInvoiceContent() {
           </Link>
           <div>
             <div className="flex items-center gap-2 text-xs text-neutral-400">
-              <Link href="/" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors font-medium">
+              <Link href="/" className="hover:text-neutral-900 dark:hover:text-neutral-400 transition-colors font-medium">
                 Accueil
               </Link>
               <span>/</span>
@@ -637,21 +637,10 @@ function CreateInvoiceContent() {
                 </p>
               </div>
 
-              {/* Currency Selector Badge */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] text-neutral-400 font-medium hidden sm:inline">Devise :</span>
-                <select
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value)}
-                  className="px-2.5 py-1 text-xs font-bold rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-700 focus:outline-none cursor-pointer"
-                >
-                  {AVAILABLE_CURRENCIES.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.symbol} ({c.code})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Rappel de la devise (choisie dans « Devise de Facturation ») */}
+              <span className="px-2.5 py-1 text-[11px] font-mono font-medium rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700 shrink-0">
+                {getCurrencyLabel(currency)}
+              </span>
             </div>
 
             {/* Dynamic Items List */}
