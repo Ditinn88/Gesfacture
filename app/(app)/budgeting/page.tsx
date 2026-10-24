@@ -3,8 +3,17 @@
 import React, { useMemo } from "react";
 import { TrendingUp, TrendingDown, PiggyBank } from "lucide-react";
 import { useData } from "@/lib/data-context";
-import { formatCurrency, resolveInvoicesCurrency, toLocalYMD } from "@/lib/utils";
+import {
+  formatCurrency,
+  getCurrencySymbol,
+  isInCurrency,
+  resolveInvoicesCurrency,
+  sumByCurrency,
+  toLocalYMD,
+} from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CurrencyTotals } from "@/components/ui/currency-totals";
+import { Invoice } from "@/lib/mock-data";
 
 export default function BudgetingPage() {
   const { invoices, organization, isLoading } = useData();
@@ -19,19 +28,34 @@ export default function BudgetingPage() {
     const thisMonth = toLocalYMD(now).slice(0, 7);
     const lastMonth = toLocalYMD(new Date(now.getFullYear(), now.getMonth() - 1, 1)).slice(0, 7);
     const issued = invoices.filter((i) => i.status !== "brouillon");
-    const sumFor = (prefix: string, onlyPaid: boolean) =>
-      issued
-        .filter((i) => i.issueDate.startsWith(prefix) && (!onlyPaid || i.status === "payee"))
+    const listFor = (prefix: string, onlyPaid: boolean) =>
+      issued.filter((i) => i.issueDate.startsWith(prefix) && (!onlyPaid || i.status === "payee"));
+    const totalsOf = (list: Invoice[]) => (list.length ? sumByCurrency(list, currency) : []);
+    // Variation et taux : calculés dans la devise principale uniquement
+    const mainSum = (list: Invoice[]) =>
+      list
+        .filter((i) => isInCurrency(i, currency, organization.currency || "XOF"))
         .reduce((s, i) => s + i.amount, 0);
 
-    const invoicedThis = sumFor(thisMonth, false);
-    const invoicedLast = sumFor(lastMonth, false);
-    const collectedThis = sumFor(thisMonth, true);
+    const thisList = listFor(thisMonth, false);
+    const lastList = listFor(lastMonth, false);
+    const collectedList = listFor(thisMonth, true);
+    const invoicedThis = mainSum(thisList);
+    const invoicedLast = mainSum(lastList);
+    const collectedThis = mainSum(collectedList);
     const variation = invoicedLast > 0 ? ((invoicedThis - invoicedLast) / invoicedLast) * 100 : null;
     const collectionRate = invoicedThis > 0 ? (collectedThis / invoicedThis) * 100 : null;
+    const multiCurrency = new Set(issued.map((i) => i.currency || organization.currency || "XOF")).size > 1;
 
-    return { invoicedThis, invoicedLast, collectedThis, variation, collectionRate };
-  }, [invoices]);
+    return {
+      invoicedThis: totalsOf(thisList),
+      invoicedLast: totalsOf(lastList),
+      collectedThis: totalsOf(collectedList),
+      variation,
+      collectionRate,
+      multiCurrency,
+    };
+  }, [invoices, currency, organization.currency]);
 
   const monthLabel = new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
 
@@ -65,10 +89,13 @@ export default function BudgetingPage() {
               <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">CA facturé ce mois</p>
             </div>
             <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-              {formatCurrency(stats.invoicedThis, currency)}
+              <CurrencyTotals totals={stats.invoicedThis} fallbackCurrency={currency} />
             </p>
             <p className="text-xs text-neutral-400 dark:text-neutral-500">
-              Mois précédent : {formatCurrency(stats.invoicedLast, currency)}
+              Mois précédent :{" "}
+              {(stats.invoicedLast.length ? stats.invoicedLast : [{ currency, total: 0 }])
+                .map((t) => formatCurrency(t.total, t.currency))
+                .join(" + ")}
               {stats.variation !== null && (
                 <span
                   className={
@@ -93,7 +120,7 @@ export default function BudgetingPage() {
               <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Encaissé ce mois</p>
             </div>
             <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-              {formatCurrency(stats.collectedThis, currency)}
+              <CurrencyTotals totals={stats.collectedThis} fallbackCurrency={currency} />
             </p>
             <div className="w-full h-2 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
               <div
@@ -103,7 +130,9 @@ export default function BudgetingPage() {
             </div>
             <p className="text-xs text-neutral-400 dark:text-neutral-500">
               {stats.collectionRate !== null
-                ? `${stats.collectionRate.toFixed(1).replace(".", ",")} % du CA facturé ce mois`
+                ? `${stats.collectionRate.toFixed(1).replace(".", ",")} % du CA facturé ce mois${
+                    stats.multiCurrency ? ` (en ${getCurrencySymbol(currency)})` : ""
+                  }`
                 : "Aucune facture émise ce mois"}
             </p>
           </div>

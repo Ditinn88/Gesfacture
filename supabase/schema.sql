@@ -57,7 +57,6 @@ CREATE TABLE IF NOT EXISTS public.invoices (
   payment_method TEXT,
   items JSONB DEFAULT '[]'::jsonb,
   notes TEXT,
-  currency TEXT DEFAULT 'XOF',
   created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()),
   updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now())
 );

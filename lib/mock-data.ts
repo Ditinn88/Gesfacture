@@ -111,27 +111,43 @@ export interface Organization {
   bankSwift?: string;
 }
 
+// Coordonnées vides par défaut : elles s'impriment sur les factures, l'utilisateur les saisit dans Paramètres
 export const DEFAULT_ORGANIZATION: Organization = {
   name: "GESFACTURE",
   legalName: "GESFACTURE SAS",
-  rccm: "SN-DKR-2026-B-1420",
-  taxId: "009842103 2V3",
-  address: "Plateau, Boulevard de la République",
+  rccm: "",
+  taxId: "",
+  address: "",
   city: "Dakar",
   country: "Sénégal",
-  phone: "+221 33 820 40 50",
-  email: "contact@gesfacture.sn",
-  website: "https://gesfacture.vercel.app",
+  phone: "",
+  email: "",
+  website: "",
   currency: "XOF",
   invoicePrefix: "FAC-2026-",
   paymentDelay: 15,
   defaultVatRate: 18,
-  waveNumber: "+221 77 820 40 50",
-  omNumber: "+221 78 820 40 50",
-  iban: "SN08 SN01 0100 2345 6789 01",
-  bankName: "Société Générale Sénégal (SGS)",
-  bankSwift: "SGESDAKA",
+  waveNumber: "",
+  omNumber: "",
+  iban: "",
+  bankName: "",
+  bankSwift: "",
 };
+
+// Anciennes coordonnées fictives livrées par défaut : effacées si elles sont encore en cache
+export const PLACEHOLDER_ORGANIZATION_VALUES = [
+  "SN-DKR-2026-B-1420",
+  "009842103 2V3",
+  "Plateau, Boulevard de la République",
+  "+221 33 820 40 50",
+  "contact@gesfacture.sn",
+  "https://gesfacture.vercel.app",
+  "+221 77 820 40 50",
+  "+221 78 820 40 50",
+  "SN08 SN01 0100 2345 6789 01",
+  "Société Générale Sénégal (SGS)",
+  "SGESDAKA",
+];
 
 export const CURRENT_USER = {
   name: "Administrateur",

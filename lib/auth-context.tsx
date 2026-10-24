@@ -24,6 +24,37 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const LOCAL_USER_KEY = "gesfacture_local_auth_user_v6";
+const LOCAL_ACCOUNTS_KEY = "gesfacture_local_accounts";
+
+// Comptes du mode local (sans Supabase) : on ne garde qu'une empreinte du mot de passe, jamais le mot de passe
+type LocalAccount = { email: string; passwordHash?: string; password?: string; name?: string };
+
+async function hashPassword(email: string, password: string): Promise<string> {
+  const input = `gesfacture:${email}:${password}`;
+  // crypto.subtle n'existe qu'en contexte sécurisé (https, localhost) : repli FNV-1a sur une IP en http
+  if (typeof crypto === "undefined" || !crypto.subtle) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < input.length; i++) h = Math.imul(h ^ input.charCodeAt(i), 0x01000193) >>> 0;
+    return `fnv-${h.toString(16)}`;
+  }
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function readLocalAccounts(): Record<string, LocalAccount> {
+  try {
+    const stored = localStorage.getItem(LOCAL_ACCOUNTS_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function writeLocalAccounts(accounts: Record<string, LocalAccount>) {
+  try {
+    localStorage.setItem(LOCAL_ACCOUNTS_KEY, JSON.stringify(accounts));
+  } catch (e) {}
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -119,28 +150,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: new Error("Veuillez renseigner votre email et mot de passe.") };
       }
 
-      let localAccounts: Record<string, { email: string; password?: string; name?: string }> = {};
-      try {
-        const stored = localStorage.getItem("gesfacture_local_accounts");
-        if (stored) localAccounts = JSON.parse(stored);
-      } catch (e) {}
+      const localAccounts = readLocalAccounts();
+      const passwordHash = await hashPassword(cleanEmail, password);
 
+      // Comptes créés avant le hachage : mot de passe en clair, converti à la connexion
       const existing = localAccounts[cleanEmail];
-      if (existing && existing.password && existing.password !== password) {
+      const matches = existing?.passwordHash
+        ? existing.passwordHash === passwordHash
+        : !existing?.password || existing.password === password;
+      if (existing && !matches) {
         return { error: new Error("Mot de passe incorrect pour cette adresse email.") };
       }
 
       const defaultName = cleanEmail.split("@")[0].replace(/[._-]/g, " ");
       const userName = existing?.name || (defaultName.charAt(0).toUpperCase() + defaultName.slice(1));
 
-      localAccounts[cleanEmail] = {
-        email: cleanEmail,
-        password: password,
-        name: userName,
-      };
-      try {
-        localStorage.setItem("gesfacture_local_accounts", JSON.stringify(localAccounts));
-      } catch (e) {}
+      localAccounts[cleanEmail] = { email: cleanEmail, passwordHash, name: userName };
+      writeLocalAccounts(localAccounts);
 
       const localUser: any = {
         id: "usr-" + Date.now(),
@@ -204,20 +230,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: new Error("Le mot de passe doit comporter au moins 6 caractères.") };
       }
 
-      let localAccounts: Record<string, { email: string; password?: string; name?: string }> = {};
-      try {
-        const stored = localStorage.getItem("gesfacture_local_accounts");
-        if (stored) localAccounts = JSON.parse(stored);
-      } catch (e) {}
-
+      const localAccounts = readLocalAccounts();
       localAccounts[cleanEmail] = {
         email: cleanEmail,
-        password,
+        passwordHash: await hashPassword(cleanEmail, password),
         name: cleanName,
       };
-      try {
-        localStorage.setItem("gesfacture_local_accounts", JSON.stringify(localAccounts));
-      } catch (e) {}
+      writeLocalAccounts(localAccounts);
 
       const localUser: any = {
         id: "usr-" + Date.now(),
@@ -311,14 +330,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (!isSupabaseConfigured || !supabase) {
       if (user && user.email) {
-        try {
-          const stored = localStorage.getItem("gesfacture_local_accounts");
-          const accounts = stored ? JSON.parse(stored) : {};
-          if (accounts[user.email]) {
-            accounts[user.email].password = newPassword;
-            localStorage.setItem("gesfacture_local_accounts", JSON.stringify(accounts));
-          }
-        } catch (e) {}
+        const accounts = readLocalAccounts();
+        if (accounts[user.email]) {
+          accounts[user.email] = {
+            email: user.email,
+            name: accounts[user.email].name,
+            passwordHash: await hashPassword(user.email, newPassword),
+          };
+          writeLocalAccounts(accounts);
+        }
       }
       return { error: null };
     }

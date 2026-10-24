@@ -2,8 +2,9 @@
 
 import React, { useMemo } from "react";
 import { Invoice, Client } from "@/lib/mock-data";
-import { formatCurrency, resolveInvoicesCurrency } from "@/lib/utils";
+import { resolveInvoicesCurrency, sumByCurrency } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CurrencyTotals } from "@/components/ui/currency-totals";
 import { useData } from "@/lib/data-context";
 
 interface KpiCardsProps {
@@ -26,24 +27,21 @@ export function KpiCards({
     return resolveInvoicesCurrency(invoices, organization?.currency || "XOF");
   }, [invoices, organization?.currency]);
 
-  // Dynamic calculations from context
-  const totalCollected = invoices
-    .filter((i) => i.status === "payee")
-    .reduce((sum, i) => sum + i.amount, 0);
-
+  // Montants regroupés par devise : jamais de GNF additionnés à des FCFA
+  const paidInvoices = invoices.filter((i) => i.status === "payee");
   const pendingInvoices = invoices.filter((i) => i.status === "envoyee");
-  const pendingAmount = pendingInvoices.reduce((sum, i) => sum + i.amount, 0);
-
   const overdueInvoices = invoices.filter((i) => i.status === "en_retard");
-  const overdueAmount = overdueInvoices.reduce((sum, i) => sum + i.amount, 0);
+  const totalsOf = (list: Invoice[]) => (
+    <CurrencyTotals totals={list.length ? sumByCurrency(list, activeCurrency) : []} fallbackCurrency={activeCurrency} />
+  );
 
   const cards = [
     {
       title: "Total Encaissé",
-      amount: formatCurrency(totalCollected, activeCurrency),
+      amount: totalsOf(paidInvoices),
       subtitle:
-        totalCollected > 0
-          ? `${invoices.filter((i) => i.status === "payee").length} factures réglées`
+        paidInvoices.length > 0
+          ? `${paidInvoices.length} ${paidInvoices.length > 1 ? "factures réglées" : "facture réglée"}`
           : "Aucun encaissement pour le moment",
       amountColor: "text-neutral-900 dark:text-neutral-100",
       icon: (
@@ -65,7 +63,7 @@ export function KpiCards({
     },
     {
       title: "Factures en Attente",
-      amount: formatCurrency(pendingAmount, activeCurrency),
+      amount: totalsOf(pendingInvoices),
       subtitle:
         pendingInvoices.length > 0
           ? `${pendingInvoices.length} ${pendingInvoices.length > 1 ? "factures envoyées" : "facture envoyée"}`
@@ -92,12 +90,12 @@ export function KpiCards({
     },
     {
       title: "En Retard",
-      amount: formatCurrency(overdueAmount, activeCurrency),
+      amount: totalsOf(overdueInvoices),
       subtitle:
         overdueInvoices.length > 0
           ? `${overdueInvoices.length} ${overdueInvoices.length > 1 ? "factures en retard" : "facture en retard"}`
           : "Aucun retard de paiement",
-      amountColor: overdueAmount > 0 ? "text-[#dc2626] dark:text-red-400 font-bold" : "text-neutral-900 dark:text-neutral-100 font-bold",
+      amountColor: overdueInvoices.length > 0 ? "text-[#dc2626] dark:text-red-400 font-bold" : "text-neutral-900 dark:text-neutral-100 font-bold",
       icon: (
         <svg
           width="14"
@@ -171,7 +169,7 @@ export function KpiCards({
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 flex items-center">
               {card.title}
-              {card.title === "En Retard" && (
+              {card.title === "En Retard" && overdueInvoices.length > 0 && (
                 <span className="relative flex h-2 w-2 ml-2 inline-flex">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>

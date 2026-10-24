@@ -74,14 +74,16 @@ export default function DashboardPage() {
             </button>
           )}
 
-          {/* Skeleton Loader Tester button */}
-          <button
-            onClick={() => setIsSkeletonPreview(!isSkeletonPreview)}
-            className="text-[11px] font-medium text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 px-2 py-1.5 rounded border border-transparent hover:border-neutral-200 dark:hover:border-neutral-800 transition-colors hidden md:inline-flex"
-            title="Cliquez pour basculer entre le skeleton loader et les données réelles"
-          >
-            {isSkeletonPreview ? "Mode Données" : "Tester Skeletons"}
-          </button>
+          {/* Skeleton Loader Tester button (développement uniquement) */}
+          {process.env.NODE_ENV !== "production" && (
+            <button
+              onClick={() => setIsSkeletonPreview(!isSkeletonPreview)}
+              className="text-[11px] font-medium text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 px-2 py-1.5 rounded border border-transparent hover:border-neutral-200 dark:hover:border-neutral-800 transition-colors hidden md:inline-flex"
+              title="Cliquez pour basculer entre le skeleton loader et les données réelles"
+            >
+              {isSkeletonPreview ? "Mode Données" : "Tester Skeletons"}
+            </button>
+          )}
         </div>
       </div>
 

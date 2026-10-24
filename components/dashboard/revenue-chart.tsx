@@ -12,7 +12,8 @@ import {
 } from "recharts";
 import { useTheme } from "next-themes";
 import { useData } from "@/lib/data-context";
-import { formatCurrency, getCurrencySymbol, resolveInvoicesCurrency } from "@/lib/utils";
+import { formatCurrency, getCurrencySymbol, isInCurrency, resolveInvoicesCurrency } from "@/lib/utils";
+import { CurrencyTotals } from "@/components/ui/currency-totals";
 import { TrendingUp, Layers, CheckCircle } from "lucide-react";
 
 const MONTH_NAMES = [
@@ -28,6 +29,13 @@ export function RevenueChart() {
   const activeCurrency = useMemo(() => {
     return resolveInvoicesCurrency(invoices, organization?.currency || "XOF");
   }, [invoices, organization?.currency]);
+
+  // Le graphique et les pourcentages ne portent que sur la devise principale
+  const chartInvoices = useMemo(
+    () => invoices.filter((i) => isInCurrency(i, activeCurrency, organization?.currency || "XOF")),
+    [invoices, activeCurrency, organization?.currency]
+  );
+  const excludedCount = invoices.length - chartInvoices.length;
 
   useEffect(() => {
     setMounted(true);
@@ -53,7 +61,7 @@ export function RevenueChart() {
     }
 
     // Populate with real invoice amounts
-    invoices.forEach((inv) => {
+    chartInvoices.forEach((inv) => {
       if (!inv.issueDate) return;
       const invDate = new Date(inv.issueDate);
       if (isNaN(invDate.getTime())) return;
@@ -75,28 +83,31 @@ export function RevenueChart() {
       facture,
       encaisse,
     }));
-  }, [invoices]);
+  }, [chartInvoices]);
 
   const totalInvoiced = useMemo(
-    () => invoices.reduce((sum, i) => sum + (i.amount || 0), 0),
-    [invoices]
+    () => chartInvoices.reduce((sum, i) => sum + (i.amount || 0), 0),
+    [chartInvoices]
   );
 
   const totalCollected = useMemo(
-    () => invoices.filter((i) => i.status === "payee").reduce((sum, i) => sum + (i.amount || 0), 0),
-    [invoices]
+    () => chartInvoices.filter((i) => i.status === "payee").reduce((sum, i) => sum + (i.amount || 0), 0),
+    [chartInvoices]
   );
 
+  // Clients classés et pondérés sur leur total dans la devise principale
   const topClients = useMemo(() => {
     if (!clients || clients.length === 0) return [];
+    const inMain = (c: (typeof clients)[number]) =>
+      c.totalsByCurrency?.find((t) => t.currency === activeCurrency)?.total || 0;
     return [...clients]
-      .sort((a, b) => (b.totalInvoiced || 0) - (a.totalInvoiced || 0))
+      .sort((a, b) => inMain(b) - inMain(a))
       .slice(0, 4)
       .map((c) => ({
         ...c,
-        percentage: totalInvoiced > 0 ? Math.round(((c.totalInvoiced || 0) / totalInvoiced) * 100) : 0,
+        percentage: totalInvoiced > 0 ? Math.round((inMain(c) / totalInvoiced) * 100) : 0,
       }));
-  }, [clients, totalInvoiced]);
+  }, [clients, totalInvoiced, activeCurrency]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -154,6 +165,8 @@ export function RevenueChart() {
             </div>
             <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
               Comparatif mensuel des montants facturés vs réels encaissés ({getCurrencySymbol(activeCurrency)})
+              {excludedCount > 0 &&
+                ` · ${excludedCount} facture${excludedCount > 1 ? "s" : ""} dans une autre devise non incluse${excludedCount > 1 ? "s" : ""}`}
             </p>
           </div>
 
@@ -258,8 +271,8 @@ export function RevenueChart() {
                     <span className="font-semibold text-neutral-800 dark:text-neutral-200">
                       {client.name}
                     </span>
-                    <span className="font-bold text-neutral-900 dark:text-white">
-                      {formatCurrency(client.totalInvoiced || 0, activeCurrency)}
+                    <span className="font-bold text-neutral-900 dark:text-white text-right">
+                      <CurrencyTotals totals={client.totalsByCurrency} fallbackCurrency={activeCurrency} />
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-[11px] text-neutral-400">

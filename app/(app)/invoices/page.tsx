@@ -19,9 +19,10 @@ import {
   FileText,
 } from "lucide-react";
 import { useData } from "@/lib/data-context";
-import { formatCurrency, sumByCurrency, formatDate, cn } from "@/lib/utils";
+import { formatCurrency, resolveInvoicesCurrency, sumByCurrency, formatDate, cn } from "@/lib/utils";
 import { StatusBadge, InvoiceStatusType } from "@/components/ui/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CurrencyTotals } from "@/components/ui/currency-totals";
 import { Pagination } from "@/components/ui/pagination";
 import { RowActionsDropdown, ActionItem } from "@/components/ui/row-actions-dropdown";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
@@ -91,18 +92,15 @@ export default function InvoicesListPage() {
   // Financial aggregates, grouped by currency (never mix GNF and FCFA in one sum)
   const defaultCurrency = organization.currency || "XOF";
   const totalAmount = sumByCurrency(invoices, defaultCurrency);
-  const mainCurrency = totalAmount[0].currency;
+  const mainCurrency = resolveInvoicesCurrency(invoices, defaultCurrency);
   // An empty card shows "0" in the main invoice currency, not the organization's
   const totalForStatus = (status: string) => {
     const list = invoices.filter((i) => i.status === status);
-    return list.length ? sumByCurrency(list, defaultCurrency) : [{ currency: mainCurrency, total: 0 }];
+    return list.length ? sumByCurrency(list, defaultCurrency) : [];
   };
   const totalPaid = totalForStatus("payee");
   const totalPending = totalForStatus("envoyee");
   const totalOverdue = totalForStatus("en_retard");
-
-  const renderTotals = (totals: { currency: string; total: number }[]) =>
-    totals.map((t) => <span key={t.currency} className="block">{formatCurrency(t.total, t.currency)}</span>);
 
   const confirmDelete = () => {
     if (deleteModalInvoice) {
@@ -173,7 +171,7 @@ export default function InvoicesListPage() {
             Total Facturé ({counts.tous})
           </p>
           <p className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white font-mono">
-            {renderTotals(totalAmount)}
+            <CurrencyTotals totals={totalAmount} fallbackCurrency={mainCurrency} />
           </p>
           <p className="text-[10px] text-neutral-400">Toutes émissions confondues</p>
         </div>
@@ -187,7 +185,7 @@ export default function InvoicesListPage() {
             <span className="w-2 h-2 rounded-full bg-[#137333]" />
           </div>
           <p className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white font-mono">
-            {renderTotals(totalPaid)}
+            <CurrencyTotals totals={totalPaid} fallbackCurrency={mainCurrency} />
           </p>
           <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
             Fonds reçus en trésorerie
@@ -203,7 +201,7 @@ export default function InvoicesListPage() {
             <span className="w-2 h-2 rounded-full bg-[#b06000]" />
           </div>
           <p className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white font-mono">
-            {renderTotals(totalPending)}
+            <CurrencyTotals totals={totalPending} fallbackCurrency={mainCurrency} />
           </p>
           <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
             Échéance non échue
@@ -222,7 +220,7 @@ export default function InvoicesListPage() {
             </span>
           </div>
           <p className="text-base sm:text-lg font-bold text-[#c5221f] dark:text-rose-400 font-mono">
-            {renderTotals(totalOverdue)}
+            <CurrencyTotals totals={totalOverdue} fallbackCurrency={mainCurrency} />
           </p>
           <p className="text-[10px] text-[#c5221f] dark:text-rose-400 font-medium">
             Relance requise

@@ -19,9 +19,10 @@ import {
   UserCheck,
 } from "lucide-react";
 import { useData } from "@/lib/data-context";
-import { formatCurrency, sumByCurrency } from "@/lib/utils";
+import { sumByCurrency } from "@/lib/utils";
 import { Client } from "@/lib/mock-data";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CurrencyTotals } from "@/components/ui/currency-totals";
 import { Pagination } from "@/components/ui/pagination";
 import { RowActionsDropdown, ActionItem } from "@/components/ui/row-actions-dropdown";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
@@ -82,10 +83,6 @@ export default function ClientsPage() {
     clients.flatMap((c) => (c.totalsByCurrency || []).map((t) => ({ amount: t.total, currency: t.currency }))),
     defaultCurrency
   );
-  const renderTotals = (totals: { currency: string; total: number }[] | undefined) =>
-    (totals?.length ? totals : [{ currency: defaultCurrency, total: 0 }]).map((t) => (
-      <span key={t.currency} className="block">{formatCurrency(t.total, t.currency)}</span>
-    ));
   const activeClientsCount = clients.filter((c) => c.status === "actif").length;
 
   const handleOpenAdd = () => {
@@ -238,7 +235,7 @@ export default function ClientsPage() {
             Volume Global Facturé
           </p>
           <p className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white font-mono">
-            {renderTotals(totalVolumeInvoiced)}
+            <CurrencyTotals totals={totalVolumeInvoiced} fallbackCurrency={defaultCurrency} />
           </p>
           <p className="text-[10px] text-neutral-400">Total cumulé émis</p>
         </div>
@@ -363,7 +360,7 @@ export default function ClientsPage() {
 
                       {/* Total Invoiced, one line per currency */}
                       <td className="py-3.5 px-3 text-right whitespace-nowrap font-bold text-neutral-900 dark:text-white font-mono text-xs">
-                        {renderTotals(client.totalsByCurrency)}
+                        <CurrencyTotals totals={client.totalsByCurrency} fallbackCurrency={defaultCurrency} />
                       </td>
 
                       {/* Three Dots Crash-Proof Actions Dropdown */}

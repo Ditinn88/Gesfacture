@@ -4,8 +4,9 @@ import React, { useMemo } from "react";
 import Link from "next/link";
 import { Wallet, ArrowUpRight } from "lucide-react";
 import { useData } from "@/lib/data-context";
-import { formatCurrency, resolveInvoicesCurrency } from "@/lib/utils";
+import { resolveInvoicesCurrency, sumByCurrency } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CurrencyTotals } from "@/components/ui/currency-totals";
 
 const METHODS = ["Wave", "Orange Money", "MTN MoMo", "Virement Bancaire", "Espèces"] as const;
 
@@ -29,9 +30,9 @@ export default function WalletPage() {
     const paid = invoices.filter((i) => i.status === "payee");
     return METHODS.map((method) => {
       const list = paid.filter((i) => i.paymentMethod === method);
-      return { method, count: list.length, amount: list.reduce((s, i) => s + i.amount, 0) };
+      return { method, count: list.length, totals: list.length ? sumByCurrency(list, currency) : [] };
     });
-  }, [invoices]);
+  }, [invoices, currency]);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-200">
@@ -54,7 +55,7 @@ export default function WalletPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-        {totals.map(({ method, count, amount }) =>
+        {totals.map(({ method, count, totals: methodTotals }) =>
           isLoading ? (
             <Skeleton key={method} className="h-28 rounded-2xl" />
           ) : (
@@ -68,7 +69,9 @@ export default function WalletPage() {
                 </span>
                 <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">{method}</p>
               </div>
-              <p className="text-lg font-bold text-neutral-900 dark:text-white">{formatCurrency(amount, currency)}</p>
+              <p className="text-lg font-bold text-neutral-900 dark:text-white">
+                <CurrencyTotals totals={methodTotals} fallbackCurrency={currency} />
+              </p>
               <p className="text-xs text-neutral-400 dark:text-neutral-500 truncate">
                 {count} facture(s) réglée(s)
                 {accounts[method] ? ` · ${accounts[method]}` : ""}

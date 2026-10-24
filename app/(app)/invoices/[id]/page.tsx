@@ -292,7 +292,7 @@ export default function InvoiceDetailPage({
           <button
             type="button"
             onClick={() => setDeleteModalOpen(true)}
-            className="p-2 sm:px-3 sm:py-2 text-xs font-medium text-[#c5221f] dark:text-rose-400 bg-white dark:bg-neutral-800 hover:bg-[#c5221f] hover:text-white border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-none transition-all"
+            className="inline-flex items-center p-2 sm:px-3 sm:py-2 text-xs font-medium text-[#c5221f] dark:text-rose-400 bg-white dark:bg-neutral-800 hover:bg-[#c5221f] hover:text-white border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-none transition-all"
             title="Supprimer la facture"
           >
             <Trash2 className="w-3.5 h-3.5" />

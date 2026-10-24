@@ -3,8 +3,9 @@
 import React, { useMemo } from "react";
 import { Download, Receipt, Clock, AlertTriangle } from "lucide-react";
 import { useData } from "@/lib/data-context";
-import { formatCurrency, formatDate, resolveInvoicesCurrency, toLocalYMD } from "@/lib/utils";
+import { formatDate, resolveInvoicesCurrency, sumByCurrency, toLocalYMD } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CurrencyTotals } from "@/components/ui/currency-totals";
 import { Invoice } from "@/lib/mock-data";
 
 const STATUS_LABELS: Record<Invoice["status"], string> = {
@@ -35,9 +36,14 @@ export default function ReportsPage() {
     const paid = invoices.filter((i) => i.status === "payee");
     const unpaid = invoices.filter((i) => i.status === "envoyee" || i.status === "en_retard");
 
-    const vatCollectedMonth = paid
-      .filter((i) => i.issueDate.startsWith(monthPrefix))
-      .reduce((sum, i) => sum + (i.taxAmount || 0), 0);
+    // Montants regroupés par devise : jamais de GNF additionnés à des FCFA
+    const totalsBy = (list: Invoice[], amountOf: (i: Invoice) => number) =>
+      list.length ? sumByCurrency(list.map((i) => ({ amount: amountOf(i), currency: i.currency })), currency) : [];
+
+    const vatCollectedMonth = totalsBy(
+      paid.filter((i) => i.issueDate.startsWith(monthPrefix)),
+      (i) => i.taxAmount || 0
+    );
 
     const daysLate = (i: Invoice) =>
       Math.floor((new Date(today).getTime() - new Date(i.dueDate).getTime()) / DAY_MS);
@@ -45,7 +51,7 @@ export default function ReportsPage() {
     const notDue = unpaid.filter((i) => i.dueDate >= today);
     const late0to30 = unpaid.filter((i) => i.dueDate < today && daysLate(i) <= 30);
     const late30plus = unpaid.filter((i) => i.dueDate < today && daysLate(i) > 30);
-    const sum = (list: Invoice[]) => list.reduce((s, i) => s + (i.amount - (i.paidAmount || 0)), 0);
+    const sum = (list: Invoice[]) => totalsBy(list, (i) => i.amount - (i.paidAmount || 0));
 
     return {
       vatCollectedMonth,
@@ -53,7 +59,7 @@ export default function ReportsPage() {
       late0to30: { count: late0to30.length, amount: sum(late0to30) },
       late30plus: { count: late30plus.length, amount: sum(late30plus) },
     };
-  }, [invoices]);
+  }, [invoices, currency]);
 
   const handleExportCsv = () => {
     const header = [
@@ -101,28 +107,28 @@ export default function ReportsPage() {
   const cards = [
     {
       title: "TVA collectée",
-      amount: formatCurrency(stats.vatCollectedMonth, currency),
+      amount: <CurrencyTotals totals={stats.vatCollectedMonth} fallbackCurrency={currency} />,
       subtitle: `Factures payées émises en ${monthLabel}`,
       icon: <Receipt className="w-3.5 h-3.5" />,
       alert: false,
     },
     {
       title: "Créances non échues",
-      amount: formatCurrency(stats.notDue.amount, currency),
+      amount: <CurrencyTotals totals={stats.notDue.amount} fallbackCurrency={currency} />,
       subtitle: `${stats.notDue.count} facture(s) avant échéance`,
       icon: <Clock className="w-3.5 h-3.5" />,
       alert: false,
     },
     {
       title: "Retard 1 à 30 jours",
-      amount: formatCurrency(stats.late0to30.amount, currency),
+      amount: <CurrencyTotals totals={stats.late0to30.amount} fallbackCurrency={currency} />,
       subtitle: `${stats.late0to30.count} facture(s) à relancer`,
       icon: <AlertTriangle className="w-3.5 h-3.5" />,
       alert: stats.late0to30.count > 0,
     },
     {
       title: "Retard de plus de 30 jours",
-      amount: formatCurrency(stats.late30plus.amount, currency),
+      amount: <CurrencyTotals totals={stats.late30plus.amount} fallbackCurrency={currency} />,
       subtitle: `${stats.late30plus.count} facture(s) en souffrance`,
       icon: <AlertTriangle className="w-3.5 h-3.5" />,
       alert: stats.late30plus.count > 0,

@@ -7,6 +7,7 @@ import {
   Client,
   Organization,
   DEFAULT_ORGANIZATION,
+  PLACEHOLDER_ORGANIZATION_VALUES,
   RECENT_INVOICES,
   TOP_CLIENTS,
 } from "@/lib/mock-data";
@@ -88,7 +89,18 @@ const isMockClient = (c: any): boolean => {
   );
 };
 
-const parseOrgRow = (row: any): Organization => {
+// Efface les coordonnées fictives livrées par d'anciennes versions (elles s'imprimeraient sur les factures)
+const stripPlaceholders = (org: Organization): Organization => {
+  const cleaned = { ...org } as Record<string, unknown>;
+  for (const [key, value] of Object.entries(cleaned)) {
+    if (typeof value === "string" && PLACEHOLDER_ORGANIZATION_VALUES.includes(value.trim())) cleaned[key] = "";
+  }
+  return cleaned as unknown as Organization;
+};
+
+const parseOrgRow = (row: any): Organization => stripPlaceholders(parseOrgRowFields(row));
+
+const parseOrgRowFields = (row: any): Organization => {
   if (!row) return DEFAULT_ORGANIZATION;
 
   // Filter out legacy dummy numbers
@@ -321,8 +333,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const cachedClients = readVersioned<Client[]>(CLIENTS_STORAGE_KEY);
     const cachedOrg = readVersioned<Organization>(ORGANIZATION_STORAGE_KEY);
 
-    // Premier lancement en mode local (aucune donnée, même ancienne) : factures et clients d'exemple
+    // Premier lancement en mode local (aucune donnée, même ancienne) : factures et clients d'exemple,
+    // enregistrés tout de suite pour que factures et clients restent cohérents au rechargement
     const seedExamples = !cloudUserId && cachedInvoices === null && cachedClients === null;
+    if (seedExamples) {
+      writeCache(INVOICES_STORAGE_KEY, RECENT_INVOICES);
+      writeCache(CLIENTS_STORAGE_KEY, TOP_CLIENTS);
+    }
 
     setRawInvoices(
       Array.isArray(cachedInvoices)
@@ -342,7 +359,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     );
     setOrganization(
       cachedOrg && typeof cachedOrg === "object"
-        ? { ...DEFAULT_ORGANIZATION, ...cachedOrg }
+        ? stripPlaceholders({ ...DEFAULT_ORGANIZATION, ...cachedOrg })
         : DEFAULT_ORGANIZATION
     );
 

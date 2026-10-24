@@ -412,7 +412,7 @@ export function generateInvoiceHtml(invoice: Invoice, org: Organization): string
     <!-- Notes & Conditions -->
     <div class="legal-footer">
       <strong>Conditions de règlement :</strong><br />
-      ${escapeHtml(invoice.notes || "Paiement attendu sous 15 jours. Tout retard donnera lieu à application des pénalités selon les normes OHADA.")}
+      ${escapeHtml(invoice.notes || `Paiement attendu sous ${org.paymentDelay ?? 15} jours. Tout retard donnera lieu à application des pénalités selon les normes OHADA.`)}
     </div>
 
     <!-- Signatures & Payment Details -->
@@ -431,7 +431,11 @@ export function generateInvoiceHtml(invoice: Invoice, org: Organization): string
             ? `<div style="font-size: 10px; color: #171717; font-family: monospace; font-weight: 600; margin-top: 2px;">Wave : ${escapeHtml(org.waveNumber)}</div>`
             : ""
         }
-        <div style="font-size: 10px; color: #737373; font-family: monospace;">Assistance : ${escapeHtml(org.phone || org.email || "support@gesfacture.sn")}</div>
+        ${
+          org.phone || org.email
+            ? `<div style="font-size: 10px; color: #737373; font-family: monospace;">Contact : ${escapeHtml(org.phone || org.email)}</div>`
+            : ""
+        }
       </div>
       <div>
         <div class="signature-brand">${escapeHtml(org.legalName || org.name)}</div>
@@ -565,7 +569,8 @@ export async function downloadInvoicePdf(invoice: Invoice, org: Organization): P
       windowWidth: 794,
     });
 
-    const imgData = canvas.toDataURL("image/png");
+    // JPEG plutôt que PNG : PDF ~10x plus léger (envoi par email / WhatsApp), fond blanc donc sans perte visible
+    const imgData = canvas.toDataURL("image/jpeg", 0.92);
     const pdf = new jsPDF({
       orientation: "portrait",
       unit: "mm",
@@ -589,20 +594,20 @@ export async function downloadInvoicePdf(invoice: Invoice, org: Organization): P
       const xOffset = margin + (contentWidth - finalWidth) / 2;
       const yOffset = margin;
 
-      pdf.addImage(imgData, "PNG", xOffset, yOffset, finalWidth, finalHeight);
+      pdf.addImage(imgData, "JPEG", xOffset, yOffset, finalWidth, finalHeight);
     } else {
       // Extensive multi-page invoices with dozens of items
       let heightLeft = contentHeight;
       let position = margin;
 
-      pdf.addImage(imgData, "PNG", margin, position, contentWidth, contentHeight);
+      pdf.addImage(imgData, "JPEG", margin, position, contentWidth, contentHeight);
       heightLeft -= maxSinglePageHeight;
 
       // Only add a new page if remaining content is significant (> 25mm), never for leftover padding!
       while (heightLeft > 25) {
         position = heightLeft - contentHeight + margin;
         pdf.addPage();
-        pdf.addImage(imgData, "PNG", margin, position, contentWidth, contentHeight);
+        pdf.addImage(imgData, "JPEG", margin, position, contentWidth, contentHeight);
         heightLeft -= maxSinglePageHeight;
       }
     }

@@ -100,19 +100,34 @@ export function formatFCFA(amount: number | string | undefined | null, currency?
 }
 
 /**
- * Helper to determine the representative currency for a list of invoices or fallback to default
+ * Devise la plus utilisée dans une liste de factures (celle des graphiques et des taux),
+ * ou la devise par défaut si la liste est vide
  */
 export function resolveInvoicesCurrency(
   invoices: { currency?: string }[],
   defaultCurrency: string = "XOF"
 ): string {
-  if (!invoices || invoices.length === 0) return defaultCurrency;
-  // Look for the first invoice with a defined currency
-  const withCurrency = invoices.find((inv) => inv.currency && inv.currency.trim().length > 0);
-  if (withCurrency?.currency) {
-    return withCurrency.currency;
+  const counts = new Map<string, number>();
+  for (const inv of invoices || []) {
+    const currency = inv.currency?.trim().toUpperCase() || defaultCurrency;
+    counts.set(currency, (counts.get(currency) ?? 0) + 1);
   }
-  return defaultCurrency;
+  let best = defaultCurrency;
+  let bestCount = 0;
+  counts.forEach((count, currency) => {
+    if (count > bestCount) {
+      best = currency;
+      bestCount = count;
+    }
+  });
+  return best;
+}
+
+/**
+ * Vrai si la facture est dans la devise donnée (devise absente = devise par défaut)
+ */
+export function isInCurrency(inv: { currency?: string }, currency: string, defaultCurrency: string = "XOF"): boolean {
+  return (inv.currency?.trim().toUpperCase() || defaultCurrency) === currency.trim().toUpperCase();
 }
 
 /**
