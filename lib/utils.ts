@@ -87,7 +87,10 @@ export function formatCurrency(amount: number | string | undefined | null, curre
   const formatted = new Intl.NumberFormat("fr-FR", {
     minimumFractionDigits: isZeroDecimal ? 0 : 2,
     maximumFractionDigits: isZeroDecimal ? 0 : 2,
-  }).format(num);
+  })
+    .format(num)
+    // fr-FR sépare les milliers par une espace fine (U+202F), peu visible en gras : espace insécable classique
+    .replace(/ /g, " ");
 
   return `${formatted} ${symbol}`;
 }
@@ -115,7 +118,8 @@ export function resolveInvoicesCurrency(
   let best = defaultCurrency;
   let bestCount = 0;
   counts.forEach((count, currency) => {
-    if (count > bestCount) {
+    // À égalité, la devise par défaut (celle de l'organisation) l'emporte
+    if (count > bestCount || (count === bestCount && currency === defaultCurrency)) {
       best = currency;
       bestCount = count;
     }

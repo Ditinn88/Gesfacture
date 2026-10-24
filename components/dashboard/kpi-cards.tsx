@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
+import Link from "next/link";
 import { Invoice, Client } from "@/lib/mock-data";
 import { resolveInvoicesCurrency, sumByCurrency } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -39,10 +40,17 @@ export function KpiCards({
     {
       title: "Total Encaissé",
       amount: totalsOf(paidInvoices),
+      // Seules les factures « Payée » comptent : sans encaissement, on indique où les marquer payées
       subtitle:
-        paidInvoices.length > 0
-          ? `${paidInvoices.length} ${paidInvoices.length > 1 ? "factures réglées" : "facture réglée"}`
-          : "Aucun encaissement pour le moment",
+        paidInvoices.length > 0 ? (
+          `${paidInvoices.length} ${paidInvoices.length > 1 ? "factures réglées" : "facture réglée"}`
+        ) : pendingInvoices.length + overdueInvoices.length > 0 ? (
+          <Link href="/payments" className="underline underline-offset-2 hover:text-neutral-900 dark:hover:text-white">
+            Aucune facture payée • marquez-les payées dans Paiements
+          </Link>
+        ) : (
+          "Aucun encaissement pour le moment"
+        ),
       amountColor: "text-neutral-900 dark:text-neutral-100",
       icon: (
         <svg
