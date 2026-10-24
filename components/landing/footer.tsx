@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { supportWhatsappUrl } from "@/lib/support";
 
 export function LandingFooter() {
   const [newsletterEmail, setNewsletterEmail] = useState("");
@@ -245,7 +246,12 @@ export function LandingFooter() {
                 Twitter / X
               </a>
               <span>•</span>
-              <a className="hover:text-brand-deep transition-colors" href="#">
+              <a
+                className="hover:text-brand-deep transition-colors"
+                href={supportWhatsappUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 WhatsApp Support
               </a>
             </div>
