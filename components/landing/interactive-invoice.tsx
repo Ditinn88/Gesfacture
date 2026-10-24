@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import Link from "next/link";
 import { useData } from "@/lib/data-context";
 
 interface InvoiceItem {
   id: string;
   title: string;
-  subtitle: string;
   quantity: number;
   prices: {
     FCFA: number;
@@ -25,7 +25,6 @@ const currencySymbols: Record<Currency, string> = {
 
 export function InteractiveInvoice() {
   const [currency, setCurrency] = useState<Currency>("FCFA");
-  const [copied, setCopied] = useState(false);
 
   // Safe data context hook (in case rendered outside DataProvider)
   let organizationData: any = null;
@@ -38,35 +37,20 @@ export function InteractiveInvoice() {
     // context not present, fallback cleanly
   }
 
+  // Facture vierge : aucune donnée fictive, le visiteur saisit ses propres lignes
   const [items, setItems] = useState<InvoiceItem[]>([
-    {
-      id: "item-1",
-      title: "Abonnement Annuel GesFacture Enterprise — Licence Équipe",
-      subtitle: "Facturation certifiée UEMOA & CEMAC, module Mobile Money natif, exports comptables SYSCOHADA",
-      quantity: 1,
-      prices: {
-        FCFA: 350000,
-        EUR: 535,
-        USD: 580,
-      },
-    },
-    {
-      id: "item-2",
-      title: "Pack Intégration Passerelle Mobile Money & Formation Comptable",
-      subtitle: "Configuration passerelle Wave QR Code, Orange Money API & accompagnement équipe (2 sessions)",
-      quantity: 2,
-      prices: {
-        FCFA: 150000,
-        EUR: 230,
-        USD: 250,
-      },
-    },
+    { id: "item-1", title: "", quantity: 0, prices: { FCFA: 0, EUR: 0, USD: 0 } },
+    { id: "item-2", title: "", quantity: 0, prices: { FCFA: 0, EUR: 0, USD: 0 } },
   ]);
+
+  const handleTitleChange = (id: string, title: string) => {
+    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, title } : item)));
+  };
 
   const handleQuantityChange = (id: string, qty: number) => {
     setItems((prev) =>
       prev.map((item) =>
-        item.id === id ? { ...item, quantity: Math.max(1, qty || 1) } : item
+        item.id === id ? { ...item, quantity: Math.max(0, qty || 0) } : item
       )
     );
   };
@@ -104,23 +88,18 @@ export function InteractiveInvoice() {
     };
   }, [items, currency]);
 
-  const handleCopyLink = () => {
-    if (typeof window !== "undefined" && navigator?.clipboard) {
-      navigator.clipboard.writeText("https://gesfacture.app/pay/inv_2026_084");
-    }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2400);
-  };
-
-  // Real Organization issuer values
-  const issuerName = organizationData?.legalName || organizationData?.name || "GESFACTURE SAS";
-  const issuerTaxId = organizationData?.taxId
-    ? `NINEA : ${organizationData.taxId}`
-    : "NINEA : 009842103 2V3 • RCCM : SN-DKR-2026-B-1420";
-  const issuerAddress = organizationData?.city
-    ? `${organizationData.address ? `${organizationData.address} • ` : ""}${organizationData.city}, ${organizationData.country || "Sénégal"}`
-    : "Plateau, Boulevard de la République • Dakar, Sénégal";
-  const issuerEmail = organizationData?.email || "facturation@gesfacture.sn";
+  // Émetteur : les vraies informations de l'organisation si elles sont renseignées, sinon des champs vides
+  const issuerName = organizationData?.legalName || organizationData?.name || "";
+  const issuerTaxId = [
+    organizationData?.taxId && `NINEA : ${organizationData.taxId}`,
+    organizationData?.rccm && `RCCM : ${organizationData.rccm}`,
+  ]
+    .filter(Boolean)
+    .join(" • ");
+  const issuerAddress = [organizationData?.address, organizationData?.city, organizationData?.country]
+    .filter(Boolean)
+    .join(", ");
+  const issuerEmail = organizationData?.email || "";
 
   return (
     <div
@@ -150,10 +129,10 @@ export function InteractiveInvoice() {
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-bold text-neutral-900 text-base sm:text-lg">
-                FACTURE N° 2026-084
+                FACTURE N° —
               </h3>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
-                Prête à envoyer
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#f1f3f4] text-[#5f6368] border border-[#e0e0e0]/70">
+                Brouillon
               </span>
             </div>
             <p className="text-xs text-neutral-500">
@@ -187,20 +166,28 @@ export function InteractiveInvoice() {
           <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">
             Émetteur
           </span>
-          <p className="font-bold text-neutral-900">{issuerName}</p>
-          <p className="text-neutral-500 text-xs">{issuerTaxId}</p>
-          <p className="text-neutral-500 text-xs">{issuerAddress}</p>
-          <p className="text-neutral-900 font-medium text-xs mt-0.5">{issuerEmail}</p>
+          <p className={issuerName ? "font-bold text-neutral-900" : "font-bold text-neutral-300"}>
+            {issuerName || "Nom de votre entreprise"}
+          </p>
+          <p className={issuerTaxId ? "text-neutral-500 text-xs" : "text-neutral-300 text-xs"}>
+            {issuerTaxId || "NINEA • RCCM"}
+          </p>
+          <p className={issuerAddress ? "text-neutral-500 text-xs" : "text-neutral-300 text-xs"}>
+            {issuerAddress || "Adresse, ville, pays"}
+          </p>
+          <p className={issuerEmail ? "text-neutral-900 font-medium text-xs mt-0.5" : "text-neutral-300 text-xs mt-0.5"}>
+            {issuerEmail || "Email de facturation"}
+          </p>
         </div>
 
         <div className="bg-neutral-50/70 p-4 rounded-2xl border border-neutral-100">
           <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">
             Client Facturé
           </span>
-          <p className="font-bold text-neutral-900">Société Africaine de Distribution & Services (SADS SA)</p>
-          <p className="text-neutral-500 text-xs">Immeuble Horizon, Boulevard VGE • Abidjan, Côte d'Ivoire</p>
-          <p className="text-neutral-500 text-xs">RCCM : CI-ABJ-2024-B-8921 • NIF : 2108420-A</p>
-          <p className="text-neutral-900 font-medium text-xs mt-0.5">comptabilite@sads-afrique.com</p>
+          <p className="font-bold text-neutral-300">Nom du client</p>
+          <p className="text-neutral-300 text-xs">Adresse, ville, pays</p>
+          <p className="text-neutral-300 text-xs">RCCM • NIF</p>
+          <p className="text-neutral-300 text-xs mt-0.5">Email du client</p>
         </div>
       </div>
 
@@ -222,17 +209,23 @@ export function InteractiveInvoice() {
               return (
                 <tr key={item.id}>
                   <td className="py-3.5 pr-4">
-                    <p className="font-semibold text-neutral-800">{item.title}</p>
-                    <span className="text-xs text-neutral-400">{item.subtitle}</span>
+                    <input
+                      type="text"
+                      value={item.title}
+                      onChange={(e) => handleTitleChange(item.id, e.target.value)}
+                      placeholder="Description de la prestation"
+                      className="w-full text-sm font-semibold text-neutral-800 placeholder:text-neutral-300 placeholder:font-normal border-neutral-200 rounded-lg p-1 bg-neutral-50 focus:bg-white focus:ring-1 focus:ring-neutral-700"
+                      aria-label="Description de la prestation"
+                    />
                   </td>
                   <td className="py-3.5 px-3 text-center">
                     <input
                       type="number"
-                      min={1}
+                      min={0}
                       max={100}
                       value={item.quantity}
                       onChange={(e) =>
-                        handleQuantityChange(item.id, parseInt(e.target.value) || 1)
+                        handleQuantityChange(item.id, parseInt(e.target.value) || 0)
                       }
                       className="w-16 text-center text-sm border-neutral-200 rounded-lg p-1 bg-neutral-50 focus:bg-white focus:ring-1 focus:ring-neutral-700 font-medium"
                       aria-label="Quantité"
@@ -316,36 +309,18 @@ export function InteractiveInvoice() {
       {/* Bottom Action in Mockup */}
       <div className="mt-8 pt-4 border-t border-neutral-100 flex flex-wrap items-center justify-between gap-4">
         <span className="text-xs text-neutral-400">
-          💡 Modifiez les quantités ou prix pour voir le calcul automatique en direct.
+          💡 Saisissez une prestation, une quantité et un prix pour voir le calcul automatique en direct.
         </span>
 
-        <button
-          type="button"
-          onClick={handleCopyLink}
-          className={`inline-flex items-center gap-2 text-xs font-bold text-white px-4 py-2.5 rounded-xl shadow transition-all duration-200 ${
-            copied ? "bg-emerald-600 scale-105" : "bg-neutral-900 hover:bg-neutral-800"
-          }`}
+        <Link
+          href="/invoices/new"
+          className="inline-flex items-center gap-2 text-xs font-bold text-white px-4 py-2.5 rounded-xl shadow transition-all duration-200 bg-neutral-900 hover:bg-neutral-800"
         >
-          {copied ? (
-            <>
-              <svg className="w-4 h-4 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
-                <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <span>Lien sécurisé copié !</span>
-            </>
-          ) : (
-            <>
-              <svg className="w-4 h-4 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
-                <path
-                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span>Copier le lien de paiement direct</span>
-            </>
-          )}
-        </button>
+          <svg className="w-4 h-4 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+            <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span>Créer ma facture</span>
+        </Link>
       </div>
     </div>
   );
