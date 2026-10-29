@@ -5,15 +5,22 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export interface CountryDetail {
+  name: string;
+  iso2: string;
+}
+
 export interface CurrencyInfo {
   code: string;
   symbol: string;
   name: string;
   label: string;
+  iso2: string;
   flag: string;
   flags: string[];
   countries: string[];
   countriesText: string;
+  countryList: CountryDetail[];
   region: "Zone Franc CFA" | "Afrique" | "International";
 }
 
@@ -23,10 +30,21 @@ export const AVAILABLE_CURRENCIES: CurrencyInfo[] = [
     symbol: "FCFA",
     name: "Franc CFA (UEMOA)",
     label: "FCFA — Franc CFA UEMOA (XOF)",
+    iso2: "sn",
     flag: "🇸🇳",
     flags: ["🇸🇳", "🇨🇮", "🇲🇱", "🇧🇫", "🇧🇯", "🇹🇬", "🇳🇪", "🇬🇼"],
     countries: ["Sénégal", "Côte d'Ivoire", "Mali", "Burkina Faso", "Bénin", "Togo", "Niger", "Guinée-Bissau"],
     countriesText: "Sénégal, Côte d'Ivoire, Mali, Burkina Faso, Bénin, Togo, Niger, Guinée-Bissau",
+    countryList: [
+      { name: "Sénégal", iso2: "sn" },
+      { name: "Côte d'Ivoire", iso2: "ci" },
+      { name: "Mali", iso2: "ml" },
+      { name: "Burkina Faso", iso2: "bf" },
+      { name: "Bénin", iso2: "bj" },
+      { name: "Togo", iso2: "tg" },
+      { name: "Niger", iso2: "ne" },
+      { name: "Guinée-Bissau", iso2: "gw" },
+    ],
     region: "Zone Franc CFA",
   },
   {
@@ -34,10 +52,19 @@ export const AVAILABLE_CURRENCIES: CurrencyInfo[] = [
     symbol: "FCFA",
     name: "Franc CFA (CEMAC)",
     label: "FCFA — Franc CFA CEMAC (XAF)",
+    iso2: "cm",
     flag: "🇨🇲",
     flags: ["🇨🇲", "🇬🇦", "🇨🇬", "🇹🇩", "🇨🇫", "🇬🇶"],
     countries: ["Cameroun", "Gabon", "Congo-Brazzaville", "Tchad", "Centrafrique (RCA)", "Guinée Équatoriale"],
     countriesText: "Cameroun, Gabon, Congo, Tchad, Centrafrique, Guinée Équatoriale",
+    countryList: [
+      { name: "Cameroun", iso2: "cm" },
+      { name: "Gabon", iso2: "ga" },
+      { name: "Congo", iso2: "cg" },
+      { name: "Tchad", iso2: "td" },
+      { name: "Centrafrique", iso2: "cf" },
+      { name: "Guinée Équatoriale", iso2: "gq" },
+    ],
     region: "Zone Franc CFA",
   },
   {
@@ -45,10 +72,12 @@ export const AVAILABLE_CURRENCIES: CurrencyInfo[] = [
     symbol: "GNF",
     name: "Franc Guinéen",
     label: "GNF — Franc Guinéen",
+    iso2: "gn",
     flag: "🇬🇳",
     flags: ["🇬🇳"],
     countries: ["Guinée (Conakry)"],
     countriesText: "Guinée (Conakry)",
+    countryList: [{ name: "Guinée (Conakry)", iso2: "gn" }],
     region: "Afrique",
   },
   {
@@ -56,10 +85,19 @@ export const AVAILABLE_CURRENCIES: CurrencyInfo[] = [
     symbol: "€",
     name: "Euro",
     label: "EUR (€) — Euro",
+    iso2: "eu",
     flag: "🇪🇺",
     flags: ["🇪🇺", "🇫🇷", "🇧🇪", "🇩🇪", "🇪🇸", "🇮🇹"],
     countries: ["France", "Belgique", "Allemagne", "Espagne", "Italie", "Luxembourg", "Zone Euro (20 pays)"],
     countriesText: "France, Belgique, Allemagne, Espagne, Italie & Zone Euro",
+    countryList: [
+      { name: "France", iso2: "fr" },
+      { name: "Belgique", iso2: "be" },
+      { name: "Allemagne", iso2: "de" },
+      { name: "Espagne", iso2: "es" },
+      { name: "Italie", iso2: "it" },
+      { name: "Luxembourg", iso2: "lu" },
+    ],
     region: "International",
   },
   {
@@ -67,10 +105,15 @@ export const AVAILABLE_CURRENCIES: CurrencyInfo[] = [
     symbol: "$",
     name: "Dollar US",
     label: "USD ($) — Dollar US",
+    iso2: "us",
     flag: "🇺🇸",
     flags: ["🇺🇸"],
     countries: ["États-Unis", "Commerce International"],
     countriesText: "États-Unis, Commerce International",
+    countryList: [
+      { name: "États-Unis", iso2: "us" },
+      { name: "International", iso2: "un" },
+    ],
     region: "International",
   },
   {
@@ -78,10 +121,12 @@ export const AVAILABLE_CURRENCIES: CurrencyInfo[] = [
     symbol: "DH",
     name: "Dirham Marocain",
     label: "MAD (DH) — Dirham Marocain",
+    iso2: "ma",
     flag: "🇲🇦",
     flags: ["🇲🇦"],
     countries: ["Maroc"],
     countriesText: "Maroc",
+    countryList: [{ name: "Maroc", iso2: "ma" }],
     region: "Afrique",
   },
   {
@@ -89,10 +134,12 @@ export const AVAILABLE_CURRENCIES: CurrencyInfo[] = [
     symbol: "£",
     name: "Livre Sterling",
     label: "GBP (£) — Livre Sterling",
+    iso2: "gb",
     flag: "🇬🇧",
     flags: ["🇬🇧"],
     countries: ["Royaume-Uni", "Angleterre", "Écosse"],
     countriesText: "Royaume-Uni",
+    countryList: [{ name: "Royaume-Uni", iso2: "gb" }],
     region: "International",
   },
   {
@@ -100,10 +147,12 @@ export const AVAILABLE_CURRENCIES: CurrencyInfo[] = [
     symbol: "$ CA",
     name: "Dollar Canadien",
     label: "CAD ($) — Dollar Canadien",
+    iso2: "ca",
     flag: "🇨🇦",
     flags: ["🇨🇦"],
     countries: ["Canada"],
     countriesText: "Canada",
+    countryList: [{ name: "Canada", iso2: "ca" }],
     region: "International",
   },
   {
@@ -111,10 +160,15 @@ export const AVAILABLE_CURRENCIES: CurrencyInfo[] = [
     symbol: "CHF",
     name: "Franc Suisse",
     label: "CHF — Franc Suisse",
+    iso2: "ch",
     flag: "🇨🇭",
     flags: ["🇨🇭"],
     countries: ["Suisse", "Liechtenstein"],
     countriesText: "Suisse, Liechtenstein",
+    countryList: [
+      { name: "Suisse", iso2: "ch" },
+      { name: "Liechtenstein", iso2: "li" },
+    ],
     region: "International",
   },
   {
@@ -122,10 +176,12 @@ export const AVAILABLE_CURRENCIES: CurrencyInfo[] = [
     symbol: "FC",
     name: "Franc Congolais",
     label: "CDF (FC) — Franc Congolais",
+    iso2: "cd",
     flag: "🇨🇩",
     flags: ["🇨🇩"],
     countries: ["RD Congo (Kinshasa)"],
     countriesText: "RD Congo (Kinshasa)",
+    countryList: [{ name: "RD Congo (Kinshasa)", iso2: "cd" }],
     region: "Afrique",
   },
   {
@@ -133,10 +189,12 @@ export const AVAILABLE_CURRENCIES: CurrencyInfo[] = [
     symbol: "₦",
     name: "Naira Nigérian",
     label: "NGN (₦) — Naira Nigérian",
+    iso2: "ng",
     flag: "🇳🇬",
     flags: ["🇳🇬"],
     countries: ["Nigéria"],
     countriesText: "Nigéria",
+    countryList: [{ name: "Nigéria", iso2: "ng" }],
     region: "Afrique",
   },
   {
@@ -144,10 +202,12 @@ export const AVAILABLE_CURRENCIES: CurrencyInfo[] = [
     symbol: "MRU",
     name: "Ouguiya Mauritanien",
     label: "MRU — Ouguiya Mauritanien",
+    iso2: "mr",
     flag: "🇲🇷",
     flags: ["🇲🇷"],
     countries: ["Mauritanie"],
     countriesText: "Mauritanie",
+    countryList: [{ name: "Mauritanie", iso2: "mr" }],
     region: "Afrique",
   },
   {
@@ -155,10 +215,12 @@ export const AVAILABLE_CURRENCIES: CurrencyInfo[] = [
     symbol: "FRw",
     name: "Franc Rwandais",
     label: "RWF (FRw) — Franc Rwandais",
+    iso2: "rw",
     flag: "🇷🇼",
     flags: ["🇷🇼"],
     countries: ["Rwanda"],
     countriesText: "Rwanda",
+    countryList: [{ name: "Rwanda", iso2: "rw" }],
     region: "Afrique",
   },
   {
@@ -166,10 +228,12 @@ export const AVAILABLE_CURRENCIES: CurrencyInfo[] = [
     symbol: "DT",
     name: "Dinar Tunisien",
     label: "TND (DT) — Dinar Tunisien",
+    iso2: "tn",
     flag: "🇹🇳",
     flags: ["🇹🇳"],
     countries: ["Tunisie"],
     countriesText: "Tunisie",
+    countryList: [{ name: "Tunisie", iso2: "tn" }],
     region: "Afrique",
   },
   {
@@ -177,10 +241,12 @@ export const AVAILABLE_CURRENCIES: CurrencyInfo[] = [
     symbol: "AED",
     name: "Dirham des Émirats",
     label: "AED — Dirham des Émirats",
+    iso2: "ae",
     flag: "🇦🇪",
     flags: ["🇦🇪"],
     countries: ["Émirats Arabes Unis", "Dubaï", "Abu Dhabi"],
     countriesText: "Émirats Arabes Unis (Dubaï)",
+    countryList: [{ name: "Émirats Arabes Unis", iso2: "ae" }],
     region: "International",
   },
 ];
