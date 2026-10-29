@@ -128,7 +128,21 @@ ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.invoices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.organization_members ENABLE ROW LEVEL SECURITY;
 
--- Anciennes politiques (ouvertes à tous, puis limitées au seul propriétaire) : remplacées ci-dessous
+-- Anciennes politiques : toutes supprimées, quel que soit leur nom (une première version a pu en créer
+-- d'autres, ouvertes à tous, qui s'ajouteraient aux règles ci-dessous), puis recréées
+DO $$
+DECLARE
+  p RECORD;
+BEGIN
+  FOR p IN
+    SELECT policyname, tablename FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename IN ('organizations', 'clients', 'invoices', 'organization_members')
+  LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, p.tablename);
+  END LOOP;
+END $$;
+
 DROP POLICY IF EXISTS "public_org" ON public.organizations;
 DROP POLICY IF EXISTS "public_clients" ON public.clients;
 DROP POLICY IF EXISTS "public_invoices" ON public.invoices;
@@ -220,6 +234,25 @@ END $$;
 -- s'inscrire avec l'email d'un autre) : on retire ce déclencheur.
 -- Côté Supabase : Authentication > Providers > Email > « Confirm email » activé, et l'URL du site
 -- (ex. https://votre-domaine/login) ajoutée dans Authentication > URL Configuration > Redirect URLs.
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-DROP FUNCTION IF EXISTS public.handle_auto_confirm_user();
+-- Supabase n'autorise plus à modifier auth.users depuis l'éditeur SQL (« must be owner of relation users ») :
+-- on ne touche à la table que si le déclencheur existe, et une erreur de droits n'annule pas le reste du script.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgname = 'on_auth_user_created' AND tgrelid = 'auth.users'::regclass
+  ) THEN
+    BEGIN
+      DROP TRIGGER on_auth_user_created ON auth.users;
+    EXCEPTION WHEN insufficient_privilege THEN
+      RAISE WARNING 'Déclencheur on_auth_user_created non supprimé (droits insuffisants) : supprimez-le depuis Database > Triggers.';
+    END;
+  END IF;
+END $$;
+DO $$
+BEGIN
+  DROP FUNCTION IF EXISTS public.handle_auto_confirm_user() CASCADE;
+EXCEPTION WHEN OTHERS THEN
+  RAISE WARNING 'Fonction handle_auto_confirm_user non supprimée : %', SQLERRM;
+END $$;
 
