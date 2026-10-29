@@ -23,25 +23,23 @@ import {
   Lock,
   ChevronDown,
   QrCode,
+  Users,
 } from "lucide-react";
 import { cn, AVAILABLE_CURRENCIES } from "@/lib/utils";
 import { CurrencyDropdown } from "@/components/ui/currency-dropdown";
 import { useData } from "@/lib/data-context";
 import { useAuth } from "@/lib/auth-context";
+import { WORKSPACE_ROLE_LABELS } from "@/lib/mock-data";
+import { MembersPanel } from "@/components/settings/members-panel";
 
-type SettingsSection = "entreprise" | "facturation" | "paiements" | "notifications" | "securite";
+type SettingsSection = "entreprise" | "facturation" | "paiements" | "notifications" | "membres" | "securite";
+const SECTIONS: SettingsSection[] = ["entreprise", "facturation", "paiements", "notifications", "membres", "securite"];
 
 export default function SettingsPage() {
-  const { organization, updateOrganization, resetOrganization } = useData();
-  const [activeSection, setActiveSection] = useState<SettingsSection>(() => {
-    if (typeof window !== "undefined") {
-      const p = new URLSearchParams(window.location.search).get("tab") as SettingsSection | null;
-      if (p && ["entreprise", "facturation", "paiements", "notifications", "securite"].includes(p)) {
-        return p;
-      }
-    }
-    return "entreprise";
-  });
+  const { organization, updateOrganization, resetOrganization, workspaceRole } = useData();
+  // Rubrique de l'URL (?tab=) appliquée après le montage : le rendu serveur ne connaît pas l'URL,
+  // la lire dès l'initialisation provoquait une erreur d'hydratation React
+  const [activeSection, setActiveSection] = useState<SettingsSection>("entreprise");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -50,7 +48,7 @@ export default function SettingsPage() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get("tab") as SettingsSection | null;
-      if (tab && ["entreprise", "facturation", "paiements", "notifications", "securite"].includes(tab)) {
+      if (tab && SECTIONS.includes(tab)) {
         setActiveSection(tab);
       }
     }
@@ -229,6 +227,13 @@ export default function SettingsPage() {
       icon: <Bell className="w-4 h-4" />,
     },
     {
+      id: "membres" as const,
+      label: "Équipe & Membres",
+      shortLabel: "Membres",
+      sublabel: "Collaborateurs, rôles et accès partagé",
+      icon: <Users className="w-4 h-4" />,
+    },
+    {
       id: "securite" as const,
       label: "Profil & Administrateur",
       shortLabel: "Sécurité & Profil",
@@ -270,8 +275,8 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        {/* Global Save Actions */}
-        <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+        {/* Global Save Actions (la rubrique Membres enregistre chaque action immédiatement) */}
+        <div className={cn("flex items-center gap-2 w-full sm:w-auto shrink-0", activeSection === "membres" && "hidden")}>
           <button
             type="button"
             onClick={handleReset}
@@ -496,6 +501,9 @@ export default function SettingsPage() {
 
         {/* Right Content Column */}
         <div className="lg:col-span-8">
+          {activeSection === "membres" ? (
+            <MembersPanel />
+          ) : (
           <form onSubmit={handleSave} className="space-y-6">
             {/* SECTION 1: ENTREPRISE & IDENTITÉ */}
             {activeSection === "entreprise" && (
@@ -1211,7 +1219,11 @@ export default function SettingsPage() {
                     <input
                       type="text"
                       disabled
-                      value={`${userRole || "Administrateur"} (Droits complets)`}
+                      value={
+                        workspaceRole === "owner"
+                          ? `${userRole || WORKSPACE_ROLE_LABELS.owner} (Droits complets)`
+                          : `${WORKSPACE_ROLE_LABELS[workspaceRole]} (membre de l'espace ${organization.name})`
+                      }
                       className="w-full px-3 py-2 sm:py-2.5 text-xs bg-neutral-100 dark:bg-neutral-800/80 border border-neutral-200 dark:border-neutral-700 rounded-xl text-neutral-600 dark:text-neutral-400 cursor-not-allowed"
                     />
                   </div>
@@ -1286,6 +1298,7 @@ export default function SettingsPage() {
               </div>
             </div>
           </form>
+          )}
         </div>
       </div>
     </div>

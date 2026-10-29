@@ -44,6 +44,10 @@ function LoginForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    // Lien d'invitation d'un membre : son email est prérempli (il doit s'inscrire avec cette adresse)
+    const invitedEmail = searchParams.get("email");
+    if (invitedEmail) setEmail(invitedEmail);
+
     const tab = searchParams.get("tab");
     if (tab === "signup") {
       setMode("signup");

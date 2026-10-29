@@ -77,27 +77,133 @@ ALTER TABLE public.invoices
 CREATE INDEX IF NOT EXISTS clients_user_id_idx ON public.clients (user_id);
 CREATE INDEX IF NOT EXISTS invoices_user_id_idx ON public.invoices (user_id);
 
--- 4. Sécurité RLS : chaque utilisateur connecté n'accède qu'à ses propres lignes
+-- 4. Membres de l'entreprise : le chef d'entreprise (propriétaire du compte) ajoute des membres par email.
+-- Un membre qui se connecte avec cet email (confirmé) accède aux données du propriétaire selon son rôle :
+--   admin     : tout, y compris les paramètres de l'entreprise
+--   comptable : factures, clients et paiements (pas les paramètres)
+--   lecteur   : consultation seule
+CREATE TABLE IF NOT EXISTS public.organization_members (
+  id TEXT PRIMARY KEY,
+  owner_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid(),
+  email TEXT NOT NULL,
+  name TEXT,
+  role TEXT NOT NULL DEFAULT 'comptable',
+  created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT organization_members_role_check CHECK (role IN ('admin', 'comptable', 'lecteur')),
+  CONSTRAINT organization_members_owner_email_key UNIQUE (owner_id, email)
+);
+
+CREATE INDEX IF NOT EXISTS organization_members_email_idx ON public.organization_members (email);
+
+-- Rôle de l'utilisateur connecté dans l'espace d'un propriétaire : 'owner', 'admin', 'comptable',
+-- 'lecteur', ou NULL s'il n'y a pas accès. Seul un email confirmé donne accès (« Confirm email »
+-- doit rester activé). SECURITY DEFINER : lit auth.users et évite la récursion entre politiques RLS.
+CREATE OR REPLACE FUNCTION public.workspace_role(p_owner UUID)
+RETURNS TEXT
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT CASE
+    WHEN p_owner = auth.uid() THEN 'owner'
+    ELSE (
+      SELECT m.role
+      FROM public.organization_members m
+      JOIN auth.users u ON u.id = auth.uid()
+      WHERE m.owner_id = p_owner
+        AND m.email = lower(u.email)
+        AND u.email_confirmed_at IS NOT NULL
+      LIMIT 1
+    )
+  END
+$$;
+
+REVOKE ALL ON FUNCTION public.workspace_role(UUID) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.workspace_role(UUID) TO authenticated;
+
+-- 5. Sécurité RLS : chaque utilisateur accède à ses propres lignes et à celles des espaces dont il est membre
 ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.invoices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.organization_members ENABLE ROW LEVEL SECURITY;
 
--- Anciennes politiques ouvertes à tous (supprimées)
+-- Anciennes politiques (ouvertes à tous, puis limitées au seul propriétaire) : remplacées ci-dessous
 DROP POLICY IF EXISTS "public_org" ON public.organizations;
 DROP POLICY IF EXISTS "public_clients" ON public.clients;
 DROP POLICY IF EXISTS "public_invoices" ON public.invoices;
-
 DROP POLICY IF EXISTS "own_org" ON public.organizations;
-CREATE POLICY "own_org" ON public.organizations FOR ALL TO authenticated
-  USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
-
 DROP POLICY IF EXISTS "own_clients" ON public.clients;
-CREATE POLICY "own_clients" ON public.clients FOR ALL TO authenticated
-  USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
-
 DROP POLICY IF EXISTS "own_invoices" ON public.invoices;
-CREATE POLICY "own_invoices" ON public.invoices FOR ALL TO authenticated
-  USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+-- Organisation : lecture pour tout l'espace, modification par le propriétaire et les administrateurs
+DROP POLICY IF EXISTS "workspace_org_select" ON public.organizations;
+CREATE POLICY "workspace_org_select" ON public.organizations FOR SELECT TO authenticated
+  USING (public.workspace_role(user_id) IS NOT NULL);
+DROP POLICY IF EXISTS "workspace_org_insert" ON public.organizations;
+CREATE POLICY "workspace_org_insert" ON public.organizations FOR INSERT TO authenticated
+  WITH CHECK (public.workspace_role(user_id) IN ('owner', 'admin'));
+DROP POLICY IF EXISTS "workspace_org_update" ON public.organizations;
+CREATE POLICY "workspace_org_update" ON public.organizations FOR UPDATE TO authenticated
+  USING (public.workspace_role(user_id) IN ('owner', 'admin'))
+  WITH CHECK (public.workspace_role(user_id) IN ('owner', 'admin'));
+DROP POLICY IF EXISTS "workspace_org_delete" ON public.organizations;
+CREATE POLICY "workspace_org_delete" ON public.organizations FOR DELETE TO authenticated
+  USING (public.workspace_role(user_id) = 'owner');
+
+-- Clients et factures : lecture pour tout l'espace, écriture pour tous sauf les lecteurs
+DROP POLICY IF EXISTS "workspace_clients_select" ON public.clients;
+CREATE POLICY "workspace_clients_select" ON public.clients FOR SELECT TO authenticated
+  USING (public.workspace_role(user_id) IS NOT NULL);
+DROP POLICY IF EXISTS "workspace_clients_insert" ON public.clients;
+CREATE POLICY "workspace_clients_insert" ON public.clients FOR INSERT TO authenticated
+  WITH CHECK (public.workspace_role(user_id) IN ('owner', 'admin', 'comptable'));
+DROP POLICY IF EXISTS "workspace_clients_update" ON public.clients;
+CREATE POLICY "workspace_clients_update" ON public.clients FOR UPDATE TO authenticated
+  USING (public.workspace_role(user_id) IN ('owner', 'admin', 'comptable'))
+  WITH CHECK (public.workspace_role(user_id) IN ('owner', 'admin', 'comptable'));
+DROP POLICY IF EXISTS "workspace_clients_delete" ON public.clients;
+CREATE POLICY "workspace_clients_delete" ON public.clients FOR DELETE TO authenticated
+  USING (public.workspace_role(user_id) IN ('owner', 'admin', 'comptable'));
+
+DROP POLICY IF EXISTS "workspace_invoices_select" ON public.invoices;
+CREATE POLICY "workspace_invoices_select" ON public.invoices FOR SELECT TO authenticated
+  USING (public.workspace_role(user_id) IS NOT NULL);
+DROP POLICY IF EXISTS "workspace_invoices_insert" ON public.invoices;
+CREATE POLICY "workspace_invoices_insert" ON public.invoices FOR INSERT TO authenticated
+  WITH CHECK (public.workspace_role(user_id) IN ('owner', 'admin', 'comptable'));
+DROP POLICY IF EXISTS "workspace_invoices_update" ON public.invoices;
+CREATE POLICY "workspace_invoices_update" ON public.invoices FOR UPDATE TO authenticated
+  USING (public.workspace_role(user_id) IN ('owner', 'admin', 'comptable'))
+  WITH CHECK (public.workspace_role(user_id) IN ('owner', 'admin', 'comptable'));
+DROP POLICY IF EXISTS "workspace_invoices_delete" ON public.invoices;
+CREATE POLICY "workspace_invoices_delete" ON public.invoices FOR DELETE TO authenticated
+  USING (public.workspace_role(user_id) IN ('owner', 'admin', 'comptable'));
+
+-- Membres : visibles par tout l'espace, gérés par le seul propriétaire
+DROP POLICY IF EXISTS "workspace_members_select" ON public.organization_members;
+CREATE POLICY "workspace_members_select" ON public.organization_members FOR SELECT TO authenticated
+  USING (public.workspace_role(owner_id) IS NOT NULL);
+DROP POLICY IF EXISTS "owner_members_write" ON public.organization_members;
+CREATE POLICY "owner_members_write" ON public.organization_members FOR ALL TO authenticated
+  USING (owner_id = auth.uid()) WITH CHECK (owner_id = auth.uid());
+
+-- Temps réel : les 4 tables diffusent leurs changements (les règles RLS filtrent ce que chacun reçoit)
+DO $$
+DECLARE
+  t TEXT;
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime' AND NOT puballtables) THEN
+    FOREACH t IN ARRAY ARRAY['organizations', 'clients', 'invoices', 'organization_members'] LOOP
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables
+        WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = t
+      ) THEN
+        EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE public.%I', t);
+      END IF;
+    END LOOP;
+  END IF;
+END $$;
 
 -- Base existante : les lignes créées avant ces règles (user_id NULL) sont invisibles.
 -- Pour les rattacher à votre compte, remplacez l'email puis exécutez ce bloc séparément :
@@ -109,7 +215,7 @@ CREATE POLICY "own_invoices" ON public.invoices FOR ALL TO authenticated
 --       id      = (SELECT id::text FROM auth.users WHERE email = 'votre@email.com')
 --   WHERE id = 'default' AND user_id IS NULL;
 
--- 5. Vérification des emails : chaque inscrit confirme son adresse via le lien reçu.
+-- 6. Vérification des emails : chaque inscrit confirme son adresse via le lien reçu.
 -- Une ancienne version confirmait automatiquement tous les comptes (n'importe qui pouvait
 -- s'inscrire avec l'email d'un autre) : on retire ce déclencheur.
 -- Côté Supabase : Authentication > Providers > Email > « Confirm email » activé, et l'URL du site

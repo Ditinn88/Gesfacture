@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import { useData } from "@/lib/data-context";
+import { WORKSPACE_ROLE_LABELS } from "@/lib/mock-data";
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -33,6 +35,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [activePath, setActivePath] = useState<string>(pathname || "/dashboard");
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { user, openAuthModal, signOut } = useAuth();
+  const { workspaceRole } = useData();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -308,7 +311,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <span>En ligne (Cloud)</span>
                 </span>
                 <span className="px-1.5 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 font-medium">
-                  Dirigeant
+                  {workspaceRole === "owner" ? "Dirigeant" : WORKSPACE_ROLE_LABELS[workspaceRole]}
                 </span>
               </div>
 

@@ -74,7 +74,7 @@ export function Pricing() {
               <div className="mb-6">
                 <span className="text-4xl font-extrabold text-brand-navy">0</span>
                 <span className="text-sm font-semibold text-neutral-500">
-                  {" "}FCFA / mois
+                  {" "}GNF / mois
                 </span>
               </div>
               <ul className="space-y-3 text-xs sm:text-sm text-neutral-600">
@@ -113,14 +113,14 @@ export function Pricing() {
               </p>
               <div className="mb-6">
                 <span className="text-4xl font-extrabold text-brand-navy">
-                  {isYearly ? "4 000" : "5 000"}
+                  {isYearly ? "24 000" : "30 000"}
                 </span>
                 <span className="text-sm font-semibold text-neutral-500">
-                  {" "}FCFA / mois
+                  {" "}GNF / mois
                 </span>
                 <p className="text-[11px] text-emerald-600 font-semibold mt-1">
                   {isYearly
-                    ? "48 000 FCFA facturés annuellement (économisez 20%)"
+                    ? "288 000 GNF facturés annuellement (économisez 20%)"
                     : "Facturé mensuellement"}
                 </p>
               </div>
@@ -170,14 +170,14 @@ export function Pricing() {
               </p>
               <div className="mb-6">
                 <span className="text-4xl font-extrabold text-brand-navy">
-                  {isYearly ? "12 000" : "15 000"}
+                  {isYearly ? "72 000" : "90 000"}
                 </span>
                 <span className="text-sm font-semibold text-neutral-500">
-                  {" "}FCFA / mois
+                  {" "}GNF / mois
                 </span>
                 <p className="text-[11px] text-emerald-600 font-semibold mt-1">
                   {isYearly
-                    ? "144 000 FCFA facturés annuellement (économisez 20%)"
+                    ? "864 000 GNF facturés annuellement (économisez 20%)"
                     : "Facturé mensuellement"}
                 </p>
               </div>

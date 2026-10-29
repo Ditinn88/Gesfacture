@@ -111,6 +111,31 @@ export interface Organization {
   bankSwift?: string;
 }
 
+// Membres de l'entreprise (table organization_members) : accès aux données du chef d'entreprise
+export type MemberRole = "admin" | "comptable" | "lecteur";
+// Rôle de l'utilisateur connecté dans l'espace affiché : « owner » = chef d'entreprise (propriétaire du compte)
+export type WorkspaceRole = "owner" | MemberRole;
+
+export interface Member {
+  id: string;
+  email: string;
+  name: string;
+  role: MemberRole;
+}
+
+export const WORKSPACE_ROLE_LABELS: Record<WorkspaceRole, string> = {
+  owner: "Chef d'entreprise",
+  admin: "Administrateur",
+  comptable: "Comptable",
+  lecteur: "Lecteur",
+};
+
+export const MEMBER_ROLE_DESCRIPTIONS: Record<MemberRole, string> = {
+  admin: "Tout gérer, y compris les paramètres de l'entreprise",
+  comptable: "Créer et modifier factures, clients et paiements",
+  lecteur: "Consulter uniquement, sans rien modifier",
+};
+
 // Coordonnées vides par défaut : elles s'impriment sur les factures, l'utilisateur les saisit dans Paramètres
 export const DEFAULT_ORGANIZATION: Organization = {
   name: "GESFACTURE",

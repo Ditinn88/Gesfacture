@@ -26,7 +26,10 @@ export function SyncErrorBanner() {
         </span>
         <AlertTriangle className="w-4 h-4 shrink-0" />
         <div>
-          <p className="font-bold">Synchronisation Supabase échouée</p>
+          {/* Les refus liés au rôle d'un membre (denyAction dans data-context) commencent par « Votre rôle » */}
+          <p className="font-bold">
+            {syncError.startsWith("Votre rôle") ? "Action non autorisée" : "Synchronisation Supabase échouée"}
+          </p>
           <p className="mt-0.5">{syncError}</p>
         </div>
       </div>

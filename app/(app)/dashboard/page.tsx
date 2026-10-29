@@ -8,12 +8,13 @@ import { RevenueChart } from "@/components/dashboard/revenue-chart";
 import { DashboardDateFilter, DateRange } from "@/components/dashboard/dashboard-date-filter";
 import { useAuth } from "@/lib/auth-context";
 import { useData } from "@/lib/data-context";
+import { WORKSPACE_ROLE_LABELS } from "@/lib/mock-data";
 import { LogIn, Sparkles } from "lucide-react";
 
 export default function DashboardPage() {
   const [isSkeletonPreview, setIsSkeletonPreview] = useState<boolean>(false);
   const { user, openAuthModal } = useAuth();
-  const { invoices, isLoading: isDataLoading, isCloudSynced } = useData();
+  const { invoices, organization, workspaceRole, isSharedWorkspace, isLoading: isDataLoading, isCloudSynced } = useData();
   const isLoading = isDataLoading || isSkeletonPreview;
 
   const [dateRange, setDateRange] = useState<DateRange>({
@@ -55,7 +56,11 @@ export default function DashboardPage() {
           <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
             {user
               ? `Connecté avec ${user.email} • ${
-                  isCloudSynced ? "Données synchronisées avec Supabase" : "Données enregistrées sur cet appareil"
+                  isSharedWorkspace
+                    ? `Espace partagé de ${organization.name} (${WORKSPACE_ROLE_LABELS[workspaceRole]})`
+                    : isCloudSynced
+                    ? "Données synchronisées avec Supabase"
+                    : "Données enregistrées sur cet appareil"
                 }`
               : "Espace local • Connectez-vous pour rattacher vos factures à votre compte"}
           </p>

@@ -311,9 +311,10 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
                 .slice(0, 2)
                 .toUpperCase()}
             </div>
+            {/* Masqué sur mobile (débordement à 375 px) : la déconnexion reste dans le menu latéral */}
             <button
               onClick={() => signOut()}
-              className="p-1.5 rounded-lg text-neutral-400 hover:text-[#c5221f] dark:hover:text-rose-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shrink-0 cursor-pointer"
+              className="hidden sm:inline-flex p-1.5 rounded-lg text-neutral-400 hover:text-[#c5221f] dark:hover:text-rose-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shrink-0 cursor-pointer"
               title="Se déconnecter"
             >
               <LogOut className="w-3.5 h-3.5" />

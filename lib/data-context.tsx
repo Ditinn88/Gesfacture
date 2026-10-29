@@ -5,7 +5,11 @@ import {
   Invoice,
   InvoiceItem,
   Client,
+  Member,
+  MemberRole,
   Organization,
+  WorkspaceRole,
+  WORKSPACE_ROLE_LABELS,
   DEFAULT_ORGANIZATION,
   PLACEHOLDER_ORGANIZATION_VALUES,
   RECENT_INVOICES,
@@ -37,6 +41,19 @@ interface DataContextType {
   resetOrganization: () => void;
   resetAllData: () => void;
   clearDemoData: () => Promise<void>;
+  // Espace partagé : rôle de l'utilisateur connecté et droits qui en découlent
+  workspaceRole: WorkspaceRole;
+  isSharedWorkspace: boolean;
+  canEdit: boolean;
+  canManageOrganization: boolean;
+  // Membres de l'entreprise (compte Supabase uniquement). membersAvailable = false tant que
+  // supabase/schema.sql n'a pas été relancé (table organization_members absente)
+  members: Member[];
+  membersAvailable: boolean;
+  // Renvoient un message d'erreur en français, ou null en cas de succès
+  addMember: (data: { email: string; name: string; role: MemberRole }) => Promise<string | null>;
+  updateMemberRole: (id: string, role: MemberRole) => Promise<string | null>;
+  removeMember: (id: string) => Promise<string | null>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -179,6 +196,13 @@ const rowToInvoice = (row: any): Invoice => ({
   currency: row.currency || "XOF",
 });
 
+const rowToMember = (row: any): Member => ({
+  id: row.id,
+  email: row.email,
+  name: row.name || "",
+  role: row.role,
+});
+
 const rowToClient = (row: any): Client => ({
   id: row.id,
   name: row.name,
@@ -246,6 +270,20 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   // Synchronisation cloud uniquement avec une vraie session Supabase (pas en mode démo)
   const cloudUserId = isSupabaseConfigured && supabase && session?.user ? session.user.id : null;
   const cloud = cloudUserId ? supabase : null;
+  const userEmail = (session?.user?.email || "").trim().toLowerCase();
+
+  // Espace affiché : celui du compte connecté, ou celui d'un chef d'entreprise qui l'a ajouté comme membre
+  const [workspace, setWorkspace] = useState<{ userId: string; ownerId: string; role: WorkspaceRole } | null>(null);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [membersAvailable, setMembersAvailable] = useState(true);
+  const activeWorkspace = workspace && workspace.userId === cloudUserId ? workspace : null;
+  // Propriétaire des données affichées (null en mode local, ou tant que l'espace n'est pas résolu)
+  const ownerId = cloudUserId ? activeWorkspace?.ownerId ?? null : null;
+  const workspaceRole: WorkspaceRole = activeWorkspace?.role ?? "owner";
+  const canEdit = workspaceRole !== "lecteur";
+  const canManageOrganization = workspaceRole === "owner" || workspaceRole === "admin";
+  // Cache local par compte et par espace : un membre retiré ne garde pas les données de l'entreprise
+  const cacheId = cloudUserId && ownerId && ownerId !== cloudUserId ? `${cloudUserId}_${ownerId}` : cloudUserId;
 
   const [rawInvoices, setRawInvoices] = useState<Invoice[]>([]);
   const [rawClients, setRawClients] = useState<Client[]>([]);
@@ -254,6 +292,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [isCloudSynced, setIsCloudSynced] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const previousCloudUserId = useRef<string | null>(null);
+  const previousCacheId = useRef<string | null>(null);
 
   const reportSyncError = useCallback((action: string, error: any) => {
     console.error(`${action} — Supabase:`, error);
@@ -265,11 +304,46 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const dismissSyncError = useCallback(() => setSyncError(null), []);
 
+  const denyAction = (what: string) =>
+    setSyncError(
+      `Votre rôle « ${WORKSPACE_ROLE_LABELS[workspaceRole]} » ne permet pas de ${what}. Demandez au chef d'entreprise de modifier votre rôle.`
+    );
+
+  // Le compte connecté est-il membre de l'espace d'un chef d'entreprise ? (le plus ancien s'il y en a plusieurs)
+  const resolveWorkspace = useCallback(async () => {
+    if (!cloudUserId || !supabase) return;
+    const own = { userId: cloudUserId, ownerId: cloudUserId, role: "owner" as WorkspaceRole };
+    let next = own;
+    try {
+      const { data, error } = await supabase
+        .from("organization_members")
+        .select("owner_id, role")
+        .eq("email", userEmail)
+        .neq("owner_id", cloudUserId)
+        .order("created_at", { ascending: true })
+        .limit(1);
+      // Table absente (schema.sql pas encore relancé) : chacun reste dans son propre espace
+      setMembersAvailable(!error);
+      const row = !error && data ? data[0] : null;
+      if (row) next = { userId: cloudUserId, ownerId: String(row.owner_id), role: row.role as MemberRole };
+    } catch (e) {
+      // Réseau indisponible : son propre espace
+    }
+    setWorkspace((prev) =>
+      prev && prev.userId === next.userId && prev.ownerId === next.ownerId && prev.role === next.role ? prev : next
+    );
+  }, [cloudUserId, userEmail]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    resolveWorkspace();
+  }, [authLoading, resolveWorkspace]);
+
   // Mise à jour de l'état + du cache local, via des updaters fonctionnels (pas de closure périmée)
   const saveInvoices = (updater: (prev: Invoice[]) => Invoice[]) => {
     setRawInvoices((prev) => {
       const next = updater(prev).filter((i) => !isMockInvoice(i));
-      writeCache(storageKey(INVOICES_STORAGE_KEY, cloudUserId), next);
+      writeCache(storageKey(INVOICES_STORAGE_KEY, cacheId), next);
       return next;
     });
   };
@@ -277,7 +351,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const saveClients = (updater: (prev: Client[]) => Client[]) => {
     setRawClients((prev) => {
       const next = updater(prev).filter((c) => !isMockClient(c));
-      writeCache(storageKey(CLIENTS_STORAGE_KEY, cloudUserId), next);
+      writeCache(storageKey(CLIENTS_STORAGE_KEY, cacheId), next);
       return next;
     });
   };
@@ -289,16 +363,28 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     let isMounted = true;
     let channel: ReturnType<NonNullable<typeof supabase>["channel"]> | null = null;
 
-    // Déconnexion : on efface le cache du compte précédent (appareil partagé)
+    // Déconnexion : on efface le cache du compte précédent, espaces partagés compris (appareil partagé)
     const previous = previousCloudUserId.current;
     if (previous && previous !== cloudUserId) {
       try {
-        [INVOICES_STORAGE_KEY, CLIENTS_STORAGE_KEY, ORGANIZATION_STORAGE_KEY].forEach((key) =>
-          localStorage.removeItem(storageKey(key, previous))
-        );
+        const bases = [INVOICES_STORAGE_KEY, CLIENTS_STORAGE_KEY, ORGANIZATION_STORAGE_KEY];
+        Object.keys(localStorage)
+          .filter((k) => bases.some((base) => k.startsWith(storageKey(base, previous))))
+          .forEach((k) => localStorage.removeItem(k));
       } catch (e) {}
     }
     previousCloudUserId.current = cloudUserId;
+
+    // Membre retiré d'un espace partagé : son cache de cet espace est effacé
+    const previousCache = previousCacheId.current;
+    if (previousCache && previousCache !== cacheId && previousCache.includes("_")) {
+      try {
+        [INVOICES_STORAGE_KEY, CLIENTS_STORAGE_KEY, ORGANIZATION_STORAGE_KEY].forEach((key) =>
+          localStorage.removeItem(storageKey(key, previousCache))
+        );
+      } catch (e) {}
+    }
+    previousCacheId.current = cacheId;
 
     // Nettoyage immédiat des anciennes clés de localStorage contenant des mocks
     try {
@@ -325,11 +411,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     setIsCloudSynced(false);
 
+    // Compte connecté : on attend de savoir quel espace afficher (le sien ou celui de son chef d'entreprise)
+    if (cloudUserId && !ownerId) return;
+
     // 1. Cache local du compte courant (vide si aucun : jamais les données d'un autre compte).
     // Les données saisies sous les clés v7 sont reprises telles quelles.
     const readVersioned = <T,>(base: string): T | null =>
-      readCache<T>(storageKey(base, cloudUserId)) ??
-      readCache<T>(storageKey(base.replace(/_v8$/, "_v7"), cloudUserId));
+      readCache<T>(storageKey(base, cacheId)) ??
+      readCache<T>(storageKey(base.replace(/_v8$/, "_v7"), cacheId));
     const cachedInvoices = readVersioned<Invoice[]>(INVOICES_STORAGE_KEY);
     const cachedClients = readVersioned<Client[]>(CLIENTS_STORAGE_KEY);
     const cachedOrg = readVersioned<Organization>(ORGANIZATION_STORAGE_KEY);
@@ -364,7 +453,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         : DEFAULT_ORGANIZATION
     );
 
-    if (!cloudUserId || !supabase) {
+    if (!cloudUserId || !ownerId || !supabase) {
+      setMembers([]);
       setIsLoading(false);
       return () => {
         isMounted = false;
@@ -372,39 +462,54 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
 
     const client = supabase;
-    const userId = cloudUserId;
+    const workspaceOwner = ownerId;
+    const workspaceCache = cacheId;
 
+    // Filtre explicite sur le propriétaire : un membre qui a aussi ses propres données ne les mélange pas
     const fetchInvoices = () =>
-      client.from("invoices").select("*").order("created_at", { ascending: false });
+      client.from("invoices").select("*").eq("user_id", workspaceOwner).order("created_at", { ascending: false });
     const fetchClients = () =>
-      client.from("clients").select("*").order("created_at", { ascending: false });
+      client.from("clients").select("*").eq("user_id", workspaceOwner).order("created_at", { ascending: false });
     const fetchOrganization = () =>
-      client.from("organizations").select("*").eq("id", userId).maybeSingle();
+      client.from("organizations").select("*").eq("id", workspaceOwner).maybeSingle();
+    const fetchMembers = () =>
+      client
+        .from("organization_members")
+        .select("*")
+        .eq("owner_id", workspaceOwner)
+        .order("created_at", { ascending: true });
 
     const applyInvoices = (rows: any[]) => {
       const mapped = rows.map(rowToInvoice).filter((inv) => !isMockInvoice(inv));
       setRawInvoices(mapped);
-      writeCache(storageKey(INVOICES_STORAGE_KEY, userId), mapped);
+      writeCache(storageKey(INVOICES_STORAGE_KEY, workspaceCache), mapped);
     };
     const applyClients = (rows: any[]) => {
       const mapped = rows.map(rowToClient).filter((c) => !isMockClient(c));
       setRawClients(mapped);
-      writeCache(storageKey(CLIENTS_STORAGE_KEY, userId), mapped);
+      writeCache(storageKey(CLIENTS_STORAGE_KEY, workspaceCache), mapped);
     };
     const applyOrganization = (row: any) => {
       const mapped = parseOrgRow(row);
       setOrganization(mapped);
-      writeCache(storageKey(ORGANIZATION_STORAGE_KEY, userId), mapped);
+      writeCache(storageKey(ORGANIZATION_STORAGE_KEY, workspaceCache), mapped);
+    };
+    const applyMembers = (res: { data: any[] | null; error: any }) => {
+      setMembersAvailable(!res.error);
+      setMembers(res.error || !res.data ? [] : res.data.map(rowToMember));
     };
 
     async function loadCloudData() {
       try {
-        const [invoicesRes, clientsRes, orgRes] = await Promise.all([
+        const [invoicesRes, clientsRes, orgRes, membersRes] = await Promise.all([
           fetchInvoices(),
           fetchClients(),
           fetchOrganization(),
+          fetchMembers(),
         ]);
         if (!isMounted) return;
+
+        applyMembers(membersRes);
 
         if (invoicesRes.error) reportSyncError("Le chargement des factures", invoicesRes.error);
         else if (invoicesRes.data) applyInvoices(invoicesRes.data);
@@ -424,7 +529,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
       // 2. Écoute Realtime : rechargement de la table modifiée
       channel = client
-        .channel(`gesfacture-realtime-${userId}`)
+        .channel(`gesfacture-realtime-${workspaceCache}`)
         .on("postgres_changes", { event: "*", schema: "public", table: "invoices" }, async () => {
           const { data } = await fetchInvoices();
           if (data && isMounted) applyInvoices(data);
@@ -437,6 +542,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           const { data } = await fetchOrganization();
           if (data && isMounted) applyOrganization(data);
         })
+        // Membres ajoutés, retirés ou changés de rôle : liste et droits du compte connecté mis à jour
+        .on("postgres_changes", { event: "*", schema: "public", table: "organization_members" }, async () => {
+          const res = await fetchMembers();
+          if (!isMounted) return;
+          applyMembers(res);
+          resolveWorkspace();
+        })
         .subscribe();
 
       setIsLoading(false);
@@ -448,7 +560,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       isMounted = false;
       if (channel) client.removeChannel(channel);
     };
-  }, [authLoading, cloudUserId, reportSyncError]);
+  }, [authLoading, cloudUserId, ownerId, cacheId, reportSyncError, resolveWorkspace]);
 
   // Une facture envoyée dont l'échéance est dépassée est en retard
   const invoices = useMemo(() => {
@@ -477,10 +589,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   // Gestion Organisation
   const persistOrganization = (updated: Organization) => {
+    if (!canManageOrganization) {
+      denyAction("modifier les paramètres de l'entreprise");
+      return;
+    }
     setOrganization(updated);
-    writeCache(storageKey(ORGANIZATION_STORAGE_KEY, cloudUserId), updated);
+    writeCache(storageKey(ORGANIZATION_STORAGE_KEY, cacheId), updated);
 
-    if (cloud && cloudUserId) {
+    if (cloud && ownerId) {
       // Enregistrer l'IBAN avec les métadonnées bancaires
       const ibanPayload = JSON.stringify({
         iban: updated.iban || "",
@@ -491,8 +607,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       cloud
         .from("organizations")
         .upsert({
-          id: cloudUserId,
-          user_id: cloudUserId,
+          id: ownerId,
+          user_id: ownerId,
           name: updated.name,
           legal_name: updated.legalName,
           rccm: updated.rccm,
@@ -535,6 +651,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       currency: invoiceData.currency || organization.currency || "XOF",
       id,
     };
+    if (!canEdit) {
+      denyAction("créer une facture");
+      return newInvoice;
+    }
     saveInvoices((prev) => [newInvoice, ...prev]);
 
     // Sauvegarder dans Supabase
@@ -543,6 +663,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         .from("invoices")
         .insert({
           id: newInvoice.id,
+          // Rattachée au chef d'entreprise, même si c'est un membre qui la crée
+          user_id: ownerId,
           number: newInvoice.number,
           client: newInvoice.client,
           currency: newInvoice.currency || "XOF",
@@ -568,6 +690,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateInvoice = (id: string, updates: Partial<Invoice>) => {
+    if (!canEdit) {
+      denyAction("modifier une facture");
+      return;
+    }
     const normalized = updates.items ? { ...updates, items: normalizeItems(updates.items) } : updates;
     saveInvoices((prev) => prev.map((inv) => (inv.id === id ? { ...inv, ...normalized } : inv)));
 
@@ -583,6 +709,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteInvoice = (id: string): boolean => {
+    if (!canEdit) {
+      denyAction("supprimer une facture");
+      return false;
+    }
     saveInvoices((prev) => prev.filter((inv) => inv.id !== id));
 
     if (cloud) {
@@ -619,6 +749,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   // Paiement partiel : l'acompte s'ajoute à la même facture, qui passe en « Payée » une fois soldée
   const recordPayment = (id: string, amount: number): Invoice | undefined => {
+    if (!canEdit) {
+      denyAction("enregistrer un paiement");
+      return undefined;
+    }
     const current = getInvoice(id);
     if (!current || !(amount > 0)) return undefined;
     const paidAmount = Math.min(current.amount, paidAmountOf(current) + amount);
@@ -640,6 +774,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       status: clientData.status || "actif",
       percentage: clientData.percentage || 10,
     };
+    if (!canEdit) {
+      denyAction("créer un client");
+      return newClient;
+    }
     saveClients((prev) => [newClient, ...prev]);
 
     if (cloud) {
@@ -647,6 +785,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         .from("clients")
         .insert({
           id: newClient.id,
+          user_id: ownerId,
           name: newClient.name,
           email: newClient.email,
           city: newClient.city,
@@ -667,6 +806,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateClient = (id: string, updates: Partial<Client>) => {
+    if (!canEdit) {
+      denyAction("modifier un client");
+      return;
+    }
     saveClients((prev) => prev.map((c) => (c.id === id ? { ...c, ...updates } : c)));
 
     if (cloud) {
@@ -693,6 +836,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteClient = (id: string): boolean => {
+    if (!canEdit) {
+      denyAction("supprimer un client");
+      return false;
+    }
     saveClients((prev) => prev.filter((c) => c.id !== id));
 
     if (cloud) {
@@ -713,23 +860,77 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const resetAllData = () => {
+    if (workspaceRole !== "owner") {
+      denyAction("effacer toutes les données");
+      return;
+    }
     saveInvoices(() => []);
     saveClients(() => []);
     resetOrganization();
   };
 
   const clearDemoData = async () => {
+    if (workspaceRole !== "owner") {
+      denyAction("effacer toutes les données");
+      return;
+    }
     saveInvoices(() => []);
     saveClients(() => []);
-    if (cloud) {
-      // Les règles RLS limitent la suppression aux lignes du compte connecté
+    if (cloud && ownerId) {
       const [invoicesRes, clientsRes] = await Promise.all([
-        cloud.from("invoices").delete().neq("id", "none"),
-        cloud.from("clients").delete().neq("id", "none"),
+        cloud.from("invoices").delete().eq("user_id", ownerId),
+        cloud.from("clients").delete().eq("user_id", ownerId),
       ]);
       if (invoicesRes.error) reportSyncError("La suppression des factures", invoicesRes.error);
       if (clientsRes.error) reportSyncError("La suppression des clients", clientsRes.error);
     }
+  };
+
+  // Gestion des membres : réservée au chef d'entreprise, enregistrée directement dans Supabase
+  const memberError = (error: any) =>
+    error?.code === "23505"
+      ? "Cette adresse email fait déjà partie de l'équipe."
+      : `L'opération n'a pas pu être enregistrée dans Supabase (${error?.message || "erreur inconnue"}).`;
+
+  const ensureMemberAdmin = (): string | null => {
+    if (!cloud || !ownerId) return "Connectez-vous avec votre compte GESFACTURE pour gérer les membres.";
+    if (workspaceRole !== "owner") return "Seul le chef d'entreprise peut gérer les membres.";
+    if (!membersAvailable) return "La base Supabase doit d'abord être mise à jour (supabase/schema.sql).";
+    return null;
+  };
+
+  const addMember = async (data: { email: string; name: string; role: MemberRole }): Promise<string | null> => {
+    const denied = ensureMemberAdmin();
+    if (denied || !cloud) return denied;
+    const email = data.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Adresse email invalide.";
+    if (email === userEmail) return "C'est l'adresse de votre propre compte.";
+    if (members.some((m) => m.email === email)) return "Cette adresse email fait déjà partie de l'équipe.";
+    const member: Member = { id: `mem-${Date.now()}`, email, name: data.name.trim(), role: data.role };
+    const { error } = await cloud
+      .from("organization_members")
+      .insert({ id: member.id, owner_id: ownerId, email, name: member.name, role: member.role });
+    if (error) return memberError(error);
+    setMembers((prev) => [...prev.filter((m) => m.id !== member.id), member]);
+    return null;
+  };
+
+  const updateMemberRole = async (id: string, role: MemberRole): Promise<string | null> => {
+    const denied = ensureMemberAdmin();
+    if (denied || !cloud) return denied;
+    const { error } = await cloud.from("organization_members").update({ role }).eq("id", id);
+    if (error) return memberError(error);
+    setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, role } : m)));
+    return null;
+  };
+
+  const removeMember = async (id: string): Promise<string | null> => {
+    const denied = ensureMemberAdmin();
+    if (denied || !cloud) return denied;
+    const { error } = await cloud.from("organization_members").delete().eq("id", id);
+    if (error) return memberError(error);
+    setMembers((prev) => prev.filter((m) => m.id !== id));
+    return null;
   };
 
   return (
@@ -756,6 +957,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         resetOrganization,
         resetAllData,
         clearDemoData,
+        workspaceRole,
+        isSharedWorkspace: Boolean(ownerId && ownerId !== cloudUserId),
+        canEdit,
+        canManageOrganization,
+        members,
+        membersAvailable,
+        addMember,
+        updateMemberRole,
+        removeMember,
       }}
     >
       {children}
