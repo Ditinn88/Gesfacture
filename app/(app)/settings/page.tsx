@@ -25,6 +25,7 @@ import {
   QrCode,
 } from "lucide-react";
 import { cn, AVAILABLE_CURRENCIES } from "@/lib/utils";
+import { CurrencyDropdown } from "@/components/ui/currency-dropdown";
 import { useData } from "@/lib/data-context";
 import { useAuth } from "@/lib/auth-context";
 
@@ -688,28 +689,15 @@ export default function SettingsPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Currency Picker */}
-                  <div>
-                    <label className="block text-xs font-semibold text-neutral-800 dark:text-neutral-200 mb-1.5">
-                      Devise Principale du Compte
-                    </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {AVAILABLE_CURRENCIES.map((curr) => (
-                        <button
-                          key={curr.code}
-                          type="button"
-                          onClick={() => setCurrency(curr.code)}
-                          className={cn(
-                            "px-2.5 py-2 rounded-xl text-xs font-semibold border text-center transition-all",
-                            currency === curr.code
-                              ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 border-neutral-900 dark:border-white shadow-xs"
-                              : "bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700 hover:border-neutral-400"
-                          )}
-                        >
-                          <span className="block font-bold">{curr.symbol}</span>
-                          <span className="text-[10px] opacity-75">{curr.code}</span>
-                        </button>
-                      ))}
-                    </div>
+                  <div className="sm:col-span-2">
+                    <CurrencyDropdown
+                      value={currency}
+                      onChange={setCurrency}
+                      label="Devise Principale du Compte"
+                      required
+                      showActiveSymbol
+                      showCountriesPreview
+                    />
                   </div>
 
                   {/* Default VAT */}

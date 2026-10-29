@@ -5,17 +5,197 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export const AVAILABLE_CURRENCIES = [
-  { code: "XOF", symbol: "FCFA", label: "FCFA — Franc CFA UEMOA (XOF)" },
-  { code: "XAF", symbol: "FCFA", label: "FCFA — Franc CFA CEMAC (XAF)" },
-  { code: "EUR", symbol: "€", label: "EUR (€) — Euro" },
-  { code: "USD", symbol: "$", label: "USD ($) — Dollar US" },
-  { code: "GNF", symbol: "GNF", label: "GNF — Franc Guinéen" },
-  { code: "MAD", symbol: "DH", label: "MAD (DH) — Dirham Marocain" },
-  { code: "GBP", symbol: "£", label: "GBP (£) — Livre Sterling" },
-  { code: "CAD", symbol: "$ CA", label: "CAD ($) — Dollar Canadien" },
-  { code: "CHF", symbol: "CHF", label: "CHF — Franc Suisse" },
-] as const;
+export interface CurrencyInfo {
+  code: string;
+  symbol: string;
+  name: string;
+  label: string;
+  flag: string;
+  flags: string[];
+  countries: string[];
+  countriesText: string;
+  region: "Zone Franc CFA" | "Afrique" | "International";
+}
+
+export const AVAILABLE_CURRENCIES: CurrencyInfo[] = [
+  {
+    code: "XOF",
+    symbol: "FCFA",
+    name: "Franc CFA (UEMOA)",
+    label: "FCFA — Franc CFA UEMOA (XOF)",
+    flag: "🇸🇳",
+    flags: ["🇸🇳", "🇨🇮", "🇲🇱", "🇧🇫", "🇧🇯", "🇹🇬", "🇳🇪", "🇬🇼"],
+    countries: ["Sénégal", "Côte d'Ivoire", "Mali", "Burkina Faso", "Bénin", "Togo", "Niger", "Guinée-Bissau"],
+    countriesText: "Sénégal, Côte d'Ivoire, Mali, Burkina Faso, Bénin, Togo, Niger, Guinée-Bissau",
+    region: "Zone Franc CFA",
+  },
+  {
+    code: "XAF",
+    symbol: "FCFA",
+    name: "Franc CFA (CEMAC)",
+    label: "FCFA — Franc CFA CEMAC (XAF)",
+    flag: "🇨🇲",
+    flags: ["🇨🇲", "🇬🇦", "🇨🇬", "🇹🇩", "🇨🇫", "🇬🇶"],
+    countries: ["Cameroun", "Gabon", "Congo-Brazzaville", "Tchad", "Centrafrique (RCA)", "Guinée Équatoriale"],
+    countriesText: "Cameroun, Gabon, Congo, Tchad, Centrafrique, Guinée Équatoriale",
+    region: "Zone Franc CFA",
+  },
+  {
+    code: "GNF",
+    symbol: "GNF",
+    name: "Franc Guinéen",
+    label: "GNF — Franc Guinéen",
+    flag: "🇬🇳",
+    flags: ["🇬🇳"],
+    countries: ["Guinée (Conakry)"],
+    countriesText: "Guinée (Conakry)",
+    region: "Afrique",
+  },
+  {
+    code: "EUR",
+    symbol: "€",
+    name: "Euro",
+    label: "EUR (€) — Euro",
+    flag: "🇪🇺",
+    flags: ["🇪🇺", "🇫🇷", "🇧🇪", "🇩🇪", "🇪🇸", "🇮🇹"],
+    countries: ["France", "Belgique", "Allemagne", "Espagne", "Italie", "Luxembourg", "Zone Euro (20 pays)"],
+    countriesText: "France, Belgique, Allemagne, Espagne, Italie & Zone Euro",
+    region: "International",
+  },
+  {
+    code: "USD",
+    symbol: "$",
+    name: "Dollar US",
+    label: "USD ($) — Dollar US",
+    flag: "🇺🇸",
+    flags: ["🇺🇸"],
+    countries: ["États-Unis", "Commerce International"],
+    countriesText: "États-Unis, Commerce International",
+    region: "International",
+  },
+  {
+    code: "MAD",
+    symbol: "DH",
+    name: "Dirham Marocain",
+    label: "MAD (DH) — Dirham Marocain",
+    flag: "🇲🇦",
+    flags: ["🇲🇦"],
+    countries: ["Maroc"],
+    countriesText: "Maroc",
+    region: "Afrique",
+  },
+  {
+    code: "GBP",
+    symbol: "£",
+    name: "Livre Sterling",
+    label: "GBP (£) — Livre Sterling",
+    flag: "🇬🇧",
+    flags: ["🇬🇧"],
+    countries: ["Royaume-Uni", "Angleterre", "Écosse"],
+    countriesText: "Royaume-Uni",
+    region: "International",
+  },
+  {
+    code: "CAD",
+    symbol: "$ CA",
+    name: "Dollar Canadien",
+    label: "CAD ($) — Dollar Canadien",
+    flag: "🇨🇦",
+    flags: ["🇨🇦"],
+    countries: ["Canada"],
+    countriesText: "Canada",
+    region: "International",
+  },
+  {
+    code: "CHF",
+    symbol: "CHF",
+    name: "Franc Suisse",
+    label: "CHF — Franc Suisse",
+    flag: "🇨🇭",
+    flags: ["🇨🇭"],
+    countries: ["Suisse", "Liechtenstein"],
+    countriesText: "Suisse, Liechtenstein",
+    region: "International",
+  },
+  {
+    code: "CDF",
+    symbol: "FC",
+    name: "Franc Congolais",
+    label: "CDF (FC) — Franc Congolais",
+    flag: "🇨🇩",
+    flags: ["🇨🇩"],
+    countries: ["RD Congo (Kinshasa)"],
+    countriesText: "RD Congo (Kinshasa)",
+    region: "Afrique",
+  },
+  {
+    code: "NGN",
+    symbol: "₦",
+    name: "Naira Nigérian",
+    label: "NGN (₦) — Naira Nigérian",
+    flag: "🇳🇬",
+    flags: ["🇳🇬"],
+    countries: ["Nigéria"],
+    countriesText: "Nigéria",
+    region: "Afrique",
+  },
+  {
+    code: "MRU",
+    symbol: "MRU",
+    name: "Ouguiya Mauritanien",
+    label: "MRU — Ouguiya Mauritanien",
+    flag: "🇲🇷",
+    flags: ["🇲🇷"],
+    countries: ["Mauritanie"],
+    countriesText: "Mauritanie",
+    region: "Afrique",
+  },
+  {
+    code: "RWF",
+    symbol: "FRw",
+    name: "Franc Rwandais",
+    label: "RWF (FRw) — Franc Rwandais",
+    flag: "🇷🇼",
+    flags: ["🇷🇼"],
+    countries: ["Rwanda"],
+    countriesText: "Rwanda",
+    region: "Afrique",
+  },
+  {
+    code: "TND",
+    symbol: "DT",
+    name: "Dinar Tunisien",
+    label: "TND (DT) — Dinar Tunisien",
+    flag: "🇹🇳",
+    flags: ["🇹🇳"],
+    countries: ["Tunisie"],
+    countriesText: "Tunisie",
+    region: "Afrique",
+  },
+  {
+    code: "AED",
+    symbol: "AED",
+    name: "Dirham des Émirats",
+    label: "AED — Dirham des Émirats",
+    flag: "🇦🇪",
+    flags: ["🇦🇪"],
+    countries: ["Émirats Arabes Unis", "Dubaï", "Abu Dhabi"],
+    countriesText: "Émirats Arabes Unis (Dubaï)",
+    region: "International",
+  },
+];
+
+export function getCurrencyInfo(currencyCode?: string): CurrencyInfo {
+  if (!currencyCode) return AVAILABLE_CURRENCIES[0];
+  const normalized = currencyCode.trim().toUpperCase();
+  const found = AVAILABLE_CURRENCIES.find(
+    (c) =>
+      c.code === normalized ||
+      c.symbol.toUpperCase() === normalized ||
+      normalized.includes(c.code)
+  );
+  return found || AVAILABLE_CURRENCIES[0];
+}
 
 export function getCurrencySymbol(currencyCode?: string): string {
   if (!currencyCode) return "FCFA";
@@ -82,7 +262,9 @@ export function formatCurrency(amount: number | string | undefined | null, curre
   const parsed = typeof amount === "string" ? Number(amount) : amount;
   const num = typeof parsed === "number" && !isNaN(parsed) ? parsed : 0;
   const symbol = getCurrencySymbol(currency);
-  const isZeroDecimal = ["XOF", "GNF", "XAF", "FCFA"].includes(symbol) || (num % 1 === 0);
+  const isZeroDecimal =
+    ["XOF", "GNF", "XAF", "FCFA", "CDF", "RWF", "FC", "FRW"].includes(symbol.toUpperCase()) ||
+    (num % 1 === 0);
 
   const formatted = new Intl.NumberFormat("fr-FR", {
     minimumFractionDigits: isZeroDecimal ? 0 : 2,

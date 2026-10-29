@@ -41,6 +41,7 @@ import {
 import { useData } from "@/lib/data-context";
 import { useAuth } from "@/lib/auth-context";
 import { CustomDropdown, DropdownItem } from "@/components/ui/custom-dropdown";
+import { CurrencyDropdown } from "@/components/ui/currency-dropdown";
 import { CustomDatePicker } from "@/components/ui/custom-date-picker";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { printInvoice, downloadInvoicePdf, downloadInvoiceDocument } from "@/lib/print-invoice";
@@ -602,31 +603,16 @@ function CreateInvoiceContent() {
                 </div>
               </div>
 
-              {/* Field 7: Devise de Facturation Variable */}
+              {/* Field 7: Devise de Facturation avec Dropdown & Liste des Pays */}
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 flex items-center justify-between">
-                  <span>Devise de Facturation *</span>
-                  <span className="text-[11px] text-neutral-400 font-normal">
-                    Symbole actif : <strong className="font-mono text-neutral-900 dark:text-white">{getCurrencySymbol(currency)}</strong>
-                  </span>
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {AVAILABLE_CURRENCIES.map((curr) => (
-                    <button
-                      key={curr.code}
-                      type="button"
-                      onClick={() => setCurrency(curr.code)}
-                      className={`px-3 py-2 text-xs font-semibold rounded-xl border text-left transition-all flex flex-col gap-0.5 ${
-                        currency === curr.code
-                          ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 border-neutral-900 dark:border-white shadow-xs"
-                          : "bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700 hover:border-neutral-400"
-                      }`}
-                    >
-                      <span className="font-bold text-xs">{curr.symbol}</span>
-                      <span className="text-[10px] opacity-75 truncate">{curr.code}</span>
-                    </button>
-                  ))}
-                </div>
+                <CurrencyDropdown
+                  value={currency}
+                  onChange={setCurrency}
+                  label="Devise de Facturation"
+                  required
+                  showActiveSymbol
+                  showCountriesPreview
+                />
               </div>
             </div>
           </div>
