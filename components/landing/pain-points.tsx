@@ -1,25 +1,21 @@
 import React from "react";
+import { Calculator, FileX, Hourglass } from "lucide-react";
 
 interface ProblemCardProps {
-  icon: string;
-  iconBg: string;
-  iconColor: string;
+  icon: React.ReactNode;
   title: string;
   description: string;
 }
 
 function ProblemCard({
   icon,
-  iconBg,
-  iconColor,
   title,
   description,
 }: ProblemCardProps) {
   return (
     <div className="bg-brand-surface p-7 sm:p-8 rounded-3xl border border-neutral-200/80 card-hover-lift">
-      <div
-        className={`w-12 h-12 rounded-2xl ${iconBg} ${iconColor} flex items-center justify-center font-bold text-xl mb-6 shadow-sm`}
-      >
+      {/* Icônes monochromes, même style que les cartes du tableau de bord */}
+      <div className="w-12 h-12 rounded-2xl bg-neutral-100 text-neutral-700 border border-neutral-200/80 flex items-center justify-center mb-6">
         {icon}
       </div>
       <h3 className="font-bold text-lg text-neutral-900 mb-2">{title}</h3>
@@ -31,25 +27,19 @@ function ProblemCard({
 export function PainPoints() {
   const problems: ProblemCardProps[] = [
     {
-      icon: "✕",
-      iconBg: "bg-rose-50",
-      iconColor: "text-rose-600",
+      icon: <FileX className="w-5 h-5" strokeWidth={1.75} />,
       title: "Modèles Word et Excel cassés",
       description:
         "Mises en page désalignées, formules erronées, logos flous. Une facture amateur dégrade immédiatement la crédibilité auprès des grands comptes.",
     },
     {
-      icon: "%",
-      iconBg: "bg-amber-50",
-      iconColor: "text-amber-600",
+      icon: <Calculator className="w-5 h-5" strokeWidth={1.75} />,
       title: "Calcul manuel de la TVA (18%)",
       description:
         "Erreurs d'arrondis sur les montants HT/TTC, confusion sur les acomptes et pénalités fiscales évitables lors des déclarations comptables.",
     },
     {
-      icon: "⏳",
-      iconBg: "bg-neutral-100",
-      iconColor: "text-neutral-900",
+      icon: <Hourglass className="w-5 h-5" strokeWidth={1.75} />,
       title: "Relances manuelles embarrassantes",
       description:
         "Perte de trace des créances, relances oubliées et manque de moyens de paiement locaux instantanés pour vos clients.",
