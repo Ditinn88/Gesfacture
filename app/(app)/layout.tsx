@@ -8,6 +8,7 @@ import { SearchProvider } from "@/lib/search-context";
 import { DataProvider } from "@/lib/data-context";
 import { AuthModal } from "@/components/auth/auth-modal";
 import { SyncErrorBanner } from "@/components/layout/sync-error-banner";
+import { LocalImportBanner } from "@/components/layout/local-import-banner";
 
 export default function AppLayout({
   children,
@@ -49,6 +50,7 @@ export default function AppLayout({
             {/* Page Content */}
             <main className="flex-1 p-4 sm:p-6 lg:p-7 max-w-[1680px] w-full">
               <SyncErrorBanner />
+              <LocalImportBanner />
               {children}
             </main>
           </div>

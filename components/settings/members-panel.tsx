@@ -48,7 +48,7 @@ export function MembersPanel() {
     updateMemberRole,
     removeMember,
   } = useData();
-  const { user, session, openAuthModal } = useAuth();
+  const { user, session, openAuthModal, signOut } = useAuth();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -154,11 +154,17 @@ export function MembersPanel() {
             ? "Le mode démo enregistre vos données sur cet appareil uniquement. Connectez-vous avec un compte confirmé par email pour inviter des membres."
             : "Vos données sont enregistrées sur cet appareil uniquement. Connectez-vous ou créez un compte pour inviter des membres."}
         </p>
-        {!user && (
-          <button type="button" onClick={() => openAuthModal()} className={cn(secondaryButton, "mt-2")}>
-            Connexion / Inscription
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={async () => {
+            // Mode démo : on le quitte avant d'ouvrir l’inscription avec un vrai compte
+            if (user) await signOut();
+            openAuthModal(user ? "signup" : "login");
+          }}
+          className={cn(secondaryButton, "mt-2")}
+        >
+          {user ? "Quitter la démo et créer mon compte" : "Connexion / Inscription"}
+        </button>
       </InfoBox>
     );
   }

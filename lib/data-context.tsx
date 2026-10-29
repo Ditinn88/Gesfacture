@@ -54,6 +54,10 @@ interface DataContextType {
   addMember: (data: { email: string; name: string; role: MemberRole }) => Promise<string | null>;
   updateMemberRole: (id: string, role: MemberRole) => Promise<string | null>;
   removeMember: (id: string) => Promise<string | null>;
+  // Compte Supabase encore vide alors que l'appareil contient des factures / clients saisis sans compte
+  localImport: { invoices: number; clients: number } | null;
+  importLocalData: () => Promise<string | null>;
+  dismissLocalImport: () => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -203,6 +207,45 @@ const rowToMember = (row: any): Member => ({
   role: row.role,
 });
 
+// Lignes à insérer dans Supabase (user_id = chef d'entreprise propriétaire, même si un membre crée la ligne)
+const invoiceToInsertRow = (inv: Invoice, ownerId: string | null) => ({
+  id: inv.id,
+  user_id: ownerId,
+  number: inv.number,
+  client: inv.client,
+  currency: inv.currency || "XOF",
+  issue_date: inv.issueDate,
+  due_date: inv.dueDate,
+  amount: inv.amount,
+  subtotal: inv.subtotal || 0,
+  tax_rate: inv.taxRate ?? 18,
+  tax_amount: inv.taxAmount || 0,
+  discount_percent: inv.discountPercent || 0,
+  paid_amount: inv.paidAmount || 0,
+  status: inv.status,
+  payment_method: inv.paymentMethod,
+  items: inv.items || [],
+  notes: inv.notes || "",
+});
+
+const clientToInsertRow = (c: Client, ownerId: string | null) => ({
+  id: c.id,
+  user_id: ownerId,
+  name: c.name,
+  email: c.email,
+  city: c.city,
+  country: c.country,
+  phone: c.phone,
+  address: c.address,
+  total_invoiced: 0,
+  invoices_count: 0,
+  status: c.status,
+  percentage: c.percentage,
+});
+
+// Exemples chargés au premier lancement en mode local (RECENT_INVOICES / TOP_CLIENTS) : jamais importés
+const isExampleRecord = (r: { id?: string }) => typeof r.id === "string" && /^(inv|cli)-real-/.test(r.id);
+
 const rowToClient = (row: any): Client => ({
   id: row.id,
   name: row.name,
@@ -276,6 +319,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [workspace, setWorkspace] = useState<{ userId: string; ownerId: string; role: WorkspaceRole } | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [membersAvailable, setMembersAvailable] = useState(true);
+  const [localImportData, setLocalImportData] = useState<{ invoices: Invoice[]; clients: Client[] } | null>(null);
   const activeWorkspace = workspace && workspace.userId === cloudUserId ? workspace : null;
   // Propriétaire des données affichées (null en mode local, ou tant que l'espace n'est pas résolu)
   const ownerId = cloudUserId ? activeWorkspace?.ownerId ?? null : null;
@@ -521,6 +565,25 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         else if (orgRes.data) applyOrganization(orgRes.data);
 
         setIsCloudSynced(!invoicesRes.error && !clientsRes.error && !orgRes.error);
+
+        // Compte vide (le sien, pas un espace partagé) : propose d'y importer les données saisies sans compte
+        const cloudEmpty =
+          !invoicesRes.error && !clientsRes.error && !invoicesRes.data?.length && !clientsRes.data?.length;
+        if (cloudEmpty && workspaceOwner === cloudUserId) {
+          const fromDevice = <T extends { id?: string },>(base: string): T[] => {
+            const list = readCache<T[]>(base) ?? readCache<T[]>(base.replace(/_v8$/, "_v7"));
+            return Array.isArray(list) ? list.filter((r) => !isExampleRecord(r)) : [];
+          };
+          const localInvoices = fromDevice<Invoice>(INVOICES_STORAGE_KEY).filter((i) => !isMockInvoice(i));
+          const localClients = fromDevice<Client>(CLIENTS_STORAGE_KEY).filter((c) => !isMockClient(c));
+          setLocalImportData(
+            localInvoices.length || localClients.length
+              ? { invoices: localInvoices.map((i) => ({ ...i, items: normalizeItems(i.items) })), clients: localClients }
+              : null
+          );
+        } else {
+          setLocalImportData(null);
+        }
       } catch (err) {
         if (isMounted) reportSyncError("Le chargement des données", err);
       }
@@ -661,26 +724,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (cloud) {
       cloud
         .from("invoices")
-        .insert({
-          id: newInvoice.id,
-          // Rattachée au chef d'entreprise, même si c'est un membre qui la crée
-          user_id: ownerId,
-          number: newInvoice.number,
-          client: newInvoice.client,
-          currency: newInvoice.currency || "XOF",
-          issue_date: newInvoice.issueDate,
-          due_date: newInvoice.dueDate,
-          amount: newInvoice.amount,
-          subtotal: newInvoice.subtotal || 0,
-          tax_rate: newInvoice.taxRate ?? 18,
-          tax_amount: newInvoice.taxAmount || 0,
-          discount_percent: newInvoice.discountPercent || 0,
-          paid_amount: newInvoice.paidAmount || 0,
-          status: newInvoice.status,
-          payment_method: newInvoice.paymentMethod,
-          items: newInvoice.items || [],
-          notes: newInvoice.notes || "",
-        })
+        .insert(invoiceToInsertRow(newInvoice, ownerId))
         .then(({ error }) => {
           if (error) reportSyncError(`La facture ${newInvoice.number}`, error);
         });
@@ -783,20 +827,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (cloud) {
       cloud
         .from("clients")
-        .insert({
-          id: newClient.id,
-          user_id: ownerId,
-          name: newClient.name,
-          email: newClient.email,
-          city: newClient.city,
-          country: newClient.country,
-          phone: newClient.phone,
-          address: newClient.address,
-          total_invoiced: 0,
-          invoices_count: 0,
-          status: newClient.status,
-          percentage: newClient.percentage,
-        })
+        .insert(clientToInsertRow(newClient, ownerId))
         .then(({ error }) => {
           if (error) reportSyncError(`Le client ${newClient.name}`, error);
         });
@@ -886,6 +917,33 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Import des données saisies sur l'appareil sans compte : copiées dans le compte Supabase, puis
+  // effacées de l'appareil (elles sont désormais dans le cache du compte)
+  const importLocalData = async (): Promise<string | null> => {
+    if (!cloud || !ownerId || !localImportData) return null;
+    const { invoices: localInvoices, clients: localClients } = localImportData;
+    if (localClients.length) {
+      const { error } = await cloud.from("clients").upsert(localClients.map((c) => clientToInsertRow(c, ownerId)));
+      if (error) return `Les clients n'ont pas pu être importés (${error.message}).`;
+    }
+    if (localInvoices.length) {
+      const { error } = await cloud.from("invoices").upsert(localInvoices.map((i) => invoiceToInsertRow(i, ownerId)));
+      if (error) return `Les factures n'ont pas pu être importées (${error.message}).`;
+    }
+    saveClients((prev) => [...localClients, ...prev.filter((c) => !localClients.some((l) => l.id === c.id))]);
+    saveInvoices((prev) => [...localInvoices, ...prev.filter((i) => !localInvoices.some((l) => l.id === i.id))]);
+    try {
+      [INVOICES_STORAGE_KEY, CLIENTS_STORAGE_KEY].forEach((base) => {
+        localStorage.removeItem(base);
+        localStorage.removeItem(base.replace(/_v8$/, "_v7"));
+      });
+    } catch (e) {}
+    setLocalImportData(null);
+    return null;
+  };
+
+  const dismissLocalImport = () => setLocalImportData(null);
+
   // Gestion des membres : réservée au chef d'entreprise, enregistrée directement dans Supabase
   const memberError = (error: any) =>
     error?.code === "23505"
@@ -966,6 +1024,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         addMember,
         updateMemberRole,
         removeMember,
+        localImport: localImportData
+          ? { invoices: localImportData.invoices.length, clients: localImportData.clients.length }
+          : null,
+        importLocalData,
+        dismissLocalImport,
       }}
     >
       {children}

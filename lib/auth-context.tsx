@@ -101,6 +101,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           try {
             localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(session.user));
           } catch (e) {}
+        } else {
+          // Sans session Supabase, seul un accès démo choisi explicitement reste connecté : un compte
+          // local créé quand Supabase n'était pas configuré paraîtrait connecté sans l'être vraiment
+          setUser((prev) => {
+            if (prev && prev.app_metadata?.provider === "demo") return prev;
+            try {
+              localStorage.removeItem(LOCAL_USER_KEY);
+            } catch (e) {}
+            return null;
+          });
         }
         setIsLoading(false);
       }
@@ -369,7 +379,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user_metadata: {
         full_name: name,
       },
-      app_metadata: {},
+      app_metadata: { provider: "demo" },
       aud: "authenticated",
       created_at: new Date().toISOString(),
     };
