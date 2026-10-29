@@ -341,8 +341,17 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const reportSyncError = useCallback((action: string, error: any) => {
     console.error(`${action} — Supabase:`, error);
     const detail = error?.message ? ` (${error.message})` : "";
+    // Colonne ou table absente (42703, PGRST204, PGRST205) : la base n'a pas reçu supabase/schema.sql
+    if (["42703", "PGRST204", "PGRST205"].includes(error?.code)) {
+      setSyncError(
+        `La base Supabase n'est pas à jour${detail}. Exécutez une fois le fichier supabase/schema.sql dans Supabase (SQL Editor), puis rechargez la page. En attendant, vos données restent sur cet appareil.`
+      );
+      return;
+    }
     setSyncError(
-      `${action} n'a pas pu être enregistré(e) dans Supabase${detail}. La modification est conservée sur cet appareil uniquement.`
+      action.startsWith("Le chargement")
+        ? `${action} depuis Supabase a échoué${detail}. Les données affichées sont celles enregistrées sur cet appareil.`
+        : `${action} n'a pas pu être enregistré(e) dans Supabase${detail}. La modification est conservée sur cet appareil uniquement.`
     );
   }, []);
 
